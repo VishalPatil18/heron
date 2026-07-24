@@ -33,7 +33,7 @@ Copy this block for each new session. **Newest entries go at the TOP of Session 
 - `backend/app/weights.py` - `resolve_weights()` (`HERON_WEIGHTS_DIR` env or HF Hub `vishalpatil18/heron-phishing`) + `get_model()` load-once singleton.
 - `backend/app/main.py` - `GET /health`, `POST /predict` (multipart `file` OR JSON `{text, subject}`), CORS `*`.
 - Samples in `backend/samples/`, tests in `backend/tests/test_predict.py`.
-- Containerized: `backend/Dockerfile` + `.dockerignore` (HF Spaces Docker SDK, port 7860); CPU torch, weights pulled at startup (not baked in).
+- Containerized: `backend/Dockerfile` + `.dockerignore` (honors `$PORT`, default 8080); CPU torch, weights pulled at startup from the free HF model repo (not baked in). Deploys to **Google Cloud Run** via `gcloud run deploy --source` (Cloud Build — no local Docker needed).
 
 **Frontend:** not started. Planned: Next.js App Router + TS + Tailwind → Vercel.
 
@@ -49,7 +49,7 @@ uvicorn app.main:app --reload                # http://localhost:8000
 pytest                                        # 8 tests, stubbed model - no real weights needed
 ```
 
-**Deploy targets (free tier only):** backend → HF Spaces (Docker, port 7860); frontend → Vercel. Weights pulled from HF model repo at startup.
+**Deploy targets (free tier only):** backend → **Google Cloud Run** (Docker, scale-to-zero, `--max-instances 1`); frontend → Vercel. Weights pulled from the free HF model repo at startup. `NEXT_PUBLIC_API_URL` = the Cloud Run service URL (assigned at deploy — has a random hash, e.g. `https://heron-api-<hash>-uc.a.run.app`).
 
 ---
 
@@ -62,11 +62,22 @@ pytest                                        # 8 tests, stubbed model - no real
 - **Tests stub the model.** Real weights are Git LFS objects; a fixed-logits stub validates the parse→preprocess→signal→response wiring in any environment. Real-verdict checks are the manual curl step in `backend/README.md`.
 - **Signals reuse the script's `predict_phishing` thresholds**, converted from printed "Detected Issues" into a structured `signals[]` array.
 - **CORS `*`** - public demo API; lock to the Vercel domain if it ever serves more than the open scanner.
-- **Zero-cost:** HF Spaces free CPU + Vercel free tier (per CLAUDE.md §6).
+- **Backend host: Google Cloud Run, not HF Spaces.** HF now requires a paid **PRO** plan to host Docker/Gradio Spaces even on `cpu-basic` (only static Spaces are free) — hit as a `402 Payment Required` at deploy. Cloud Run keeps the FastAPI + Docker backend, scales to zero, and stays $0 under the free tier (`--max-instances 1` bounds cost). The weights **model repo** stays on HF (model storage is free; only Space compute costs).
+- **Zero-cost (per CLAUDE.md §6):** Cloud Run free tier + Vercel free tier + free HF model-repo storage.
 
 ---
 
 ## Session History
+
+### Retarget backend deploy: HF Spaces → Google Cloud Run
+
+**What was done:** HF Docker Spaces turned out to require a paid PRO plan (`402` at `hf repos create … --sdk docker`), breaking the zero-cost plan. Repointed the backend deploy to **Google Cloud Run** (free tier, scale-to-zero). No app-code changes — only the container port and the deploy docs. Weights still pulled from the free HF model repo. User runs the deploy (installs + accounts on their machine).
+**Files touched:**
+- `backend/Dockerfile` (update) — CMD now honors Cloud Run's `$PORT` (`sh -c "exec uvicorn … --port ${PORT:-8080}"`); `EXPOSE 8080`; dropped hardcoded HF `7860`.
+- `backend/README.md` (update) — removed HF Space YAML header + HF deploy section; added a **Google Cloud Run** runbook (`gcloud run deploy --source`, `--memory 2Gi`, `--max-instances 1`, capture URL); fixed the weights-upload to new `hf` CLI flags (`--type model` + `hf repos create`); local docker port 7860→8080.
+- `context.md` (update) — Key Decisions (host pivot + why), Current State deploy target, this entry, TODOs.
+**Decisions:** Cloud Run over HF PRO (zero-cost), over Render/Fly (torch RAM > their 256–512 MB free), over browser-inference (keeps FastAPI/R2). Deploy from source via Cloud Build → no local Docker. `--max-instances 1` + scale-to-zero bounds cost to $0 idle. Weights runtime-pulled (not baked) — cold starts re-download ~137 MB into tmpfs; `--memory 2Gi` covers it.
+**Open questions / follow-ups:** Cloud Run URL has a random hash → `NEXT_PUBLIC_API_URL` filled after deploy. Prereqs still pending on the user's machine: `git-lfs`, `hf` CLI, `gcloud` CLI (+ GCP project with billing). Docker still not installed locally, but Cloud Build removes that need.
 
 ### Backend containerized for Hugging Face Spaces (Docker)
 
@@ -115,7 +126,8 @@ pytest                                        # 8 tests, stubbed model - no real
 
 ## Open Questions / TODOs
 
-- [ ] One-time HF weights upload (`best_fusion_model.pth`, `vocab_text_1.json`) to `vishalpatil18/heron-phishing` - blocks deployed backend serving.
-- [ ] Confirm HF model-repo name `vishalpatil18/heron-phishing` before the upload.
-- [ ] Verify the Docker image locally (`docker build`/`run` — not runnable in the dev env): `/health` 200 + `/predict` on the phishing sample.
-- [ ] Task 3: create Space `vishalpatil18/heron-api` (Docker SDK), push `backend/`, confirm build + model download + `/predict`; record the live URL as `NEXT_PUBLIC_API_URL`.
+- [ ] Install prereqs on the dev machine: `git-lfs`, `hf` CLI, `gcloud` CLI (+ a GCP project with billing enabled).
+- [ ] One-time weights upload to the **free** HF model repo `vishalpatil18/heron-phishing` (`git lfs pull` → `hf repos create --type model` → `hf upload … --type model`) — blocks the deployed backend serving.
+- [ ] Deploy backend to Cloud Run: `gcloud run deploy heron-api --source . --region us-central1 --allow-unauthenticated --memory 2Gi --max-instances 1 --timeout 300`; confirm `/health` + `/predict`.
+- [ ] Capture the Cloud Run URL → set as `NEXT_PUBLIC_API_URL` (Task 4/12); update root `README.md` live URL (Task 12).
+- [ ] (Optional) verify the image locally with Docker before deploy — not required (Cloud Build builds from source).

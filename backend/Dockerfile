@@ -1,4 +1,4 @@
-# Heron API — FastAPI phishing inference, for Hugging Face Spaces (Docker SDK, port 7860).
+# Heron API — FastAPI phishing inference, for Google Cloud Run (honors $PORT).
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
@@ -17,5 +17,7 @@ RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/c
 COPY app ./app
 COPY samples ./samples
 
-EXPOSE 7860
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Cloud Run injects $PORT (defaults to 8080); fall back to 8080 for local runs.
+# `exec` gives uvicorn PID 1 so it receives Cloud Run's SIGTERM on shutdown.
+EXPOSE 8080
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

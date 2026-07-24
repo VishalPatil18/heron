@@ -1,13 +1,3 @@
----
-title: Heron API
-emoji: 🐦
-colorFrom: gray
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Heron API - phishing inference service
 
 FastAPI service that turns an email (`.html` / `.eml` / pasted text) into
@@ -76,35 +66,80 @@ Tests use a stubbed model, so they pass without real weights.
 
 ## One-time weights bootstrap (before the deployed backend can serve)
 
-Publish the real LFS weights to the HF model repo (you're already authenticated
-to HF as `vishalpatil18`):
+The backend pulls its weights at startup from the **free** HF model repo
+`vishalpatil18/heron-phishing` (model storage is free — only Space *compute* costs
+money). Publish the real LFS weights there once. Requires `git-lfs` and the `hf`
+CLI installed (`brew install git-lfs`; `curl -LsSf https://hf.co/cli/install.sh | bash -s`):
 
 ```bash
-git lfs pull                                   # download the real .pth locally
-hf upload vishalpatil18/heron-phishing models/best_fusion_model.pth --repo-type=model
-hf upload vishalpatil18/heron-phishing data/vocab_text_1.json --repo-type=model
+git lfs install && git lfs pull                # download the real .pth locally (not the pointer stubs)
+hf auth login                                  # authenticate the CLI
+hf repos create vishalpatil18/heron-phishing --type model --exist-ok
+hf upload vishalpatil18/heron-phishing models/best_fusion_model.pth --type model
+hf upload vishalpatil18/heron-phishing data/vocab_text_1.json      --type model
 ```
 
-## Deploy (Docker / Hugging Face Spaces)
+## Optional: verify the Docker image locally
 
-The service ships as a Docker image (HF Spaces Docker SDK). Weights are **not**
-baked into the image — they're pulled from `vishalpatil18/heron-phishing` on first
-boot and cached, so run the one-time weights bootstrap above before deploying.
-
-Verify the image locally:
+Not required for deploy (Cloud Run builds from source), but catches build/runtime
+issues early. Weights are pulled from the HF model repo on first boot:
 
 ```bash
 cd backend
 docker build -t heron-api .
-docker run --rm -p 7860:7860 heron-api        # watch logs for the HF weight download on first boot
+docker run --rm -p 8080:8080 heron-api        # watch logs for the HF weight download on first boot
 ```
 
 ```bash
-curl localhost:7860/health
-curl -F file=@samples/phishing_example.html localhost:7860/predict
+curl localhost:8080/health
+curl -F file=@samples/phishing_example.html localhost:8080/predict
 ```
 
-The Space metadata (`sdk: docker`, `app_port: 7860`) is declared in the YAML header
-at the top of this file — HF reads it when `backend/` is pushed as the Space repo.
-Deploying to the live Space is Task 3.
+## Deploy to Google Cloud Run
+
+Free tier, scales to zero. HF Docker Spaces now require a paid PRO plan, so the
+backend runs on Cloud Run instead; the weights still come from the free HF model
+repo (bootstrap above).
+
+**Prerequisites (one-time):** install the `gcloud` CLI, then a GCP project with
+billing enabled and the required APIs on:
+
+```bash
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com
+```
+
+**Deploy from source** — Cloud Build builds the `Dockerfile` in the cloud, so no
+local Docker is needed:
+
+```bash
+cd backend
+gcloud run deploy heron-api \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --memory 2Gi \
+  --cpu 1 \
+  --max-instances 1 \
+  --timeout 300
+```
+
+- `--memory 2Gi` — torch + the model exceed the 512Mi default; the download cache
+  lives in Cloud Run's in-memory filesystem, so size for it.
+- `--max-instances 1` — bounds cost; with scale-to-zero (the default min of 0),
+  idle cost is **$0**.
+- `--allow-unauthenticated` — public demo endpoint. CORS is already `*`.
+
+**Capture the URL** (it contains a random hash, e.g. `https://heron-api-abc123-uc.a.run.app`)
+and use it as `NEXT_PUBLIC_API_URL` for the frontend:
+
+```bash
+gcloud run services describe heron-api --region us-central1 --format 'value(status.url)'
+curl "$(gcloud run services describe heron-api --region us-central1 --format 'value(status.url)')/health"
+```
+
+> Cold starts re-download the ~137 MB weights (scale-to-zero has no persistent
+> cache) — a known trade-off of the free setup; `--timeout 300` gives the first
+> request room. To trade cost for speed later, bake the weights into the image.
 
