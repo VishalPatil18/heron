@@ -24,6 +24,7 @@ ENV/
 # IDE
 .vscode/
 .idea/
+.claude/
 
 # Env / secrets
 .env
