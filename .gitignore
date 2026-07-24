@@ -4,6 +4,7 @@ Thumbs.db
 
 # Python
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *.egg-info/
 .eggs/

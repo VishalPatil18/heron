@@ -1,9 +1,9 @@
-# Heron — Product Build Plan
+# Heron - Product Build Plan
 
 > **Heron** · _"Nothing swims past."_
 > A product face for the multimodal phishing-detection model in this repo: a landing page that tells the "AI supercharged phishing" story, and a dashboard where anyone can scan an email and get a verdict.
 
-**How to use this file:** Each task below is a self-contained unit of work for Claude Code. Do them **in order**. Every task ends with a green build, a working result, and a commit — so you can stop after any task and the repo is in a shippable state. Deployment happens at **Task 3** (backend live) and **Task 12** (frontend live); everything after Task 3 targets the live backend.
+**How to use this file:** Each task below is a self-contained unit of work for Claude Code. Do them **in order**. Every task ends with a green build, a working result, and a commit - so you can stop after any task and the repo is in a shippable state. Deployment happens at **Task 3** (backend live) and **Task 12** (frontend live); everything after Task 3 targets the live backend.
 
 ---
 
@@ -15,7 +15,7 @@
 | Tagline       | **"Nothing swims past."**                                                                                                                                                                                                                 |
 | Story         | AI has made phishing cheaper, faster, and more convincing. Heron is the watcher on the water that catches the phish before you click.                                                                                                     |
 | Logo          | Minimal heron silhouette; beak doubles as a checkmark/hook. SVG, mono (near-black `#0a0a0a` on white).                                                                                                                                    |
-| Design system | `DESIGN.md` in this repo (the "MiniMax" token set) — used as **Heron's** system. DM Sans, near-black CTAs on white canvas, pill buttons, 32px gradient cards vs 16px white cards. **Light mode only** (design system has no dark tokens). |
+| Design system | `DESIGN.md` in this repo (the "MiniMax" token set) - used as **Heron's** system. DM Sans, near-black CTAs on white canvas, pill buttons, 32px gradient cards vs 16px white cards. **Light mode only** (design system has no dark tokens). |
 | Frontend      | Next.js (App Router) + TypeScript + Tailwind, deployed to **Vercel** free tier.                                                                                                                                                           |
 | Backend       | **FastAPI**, model loaded **in-process** (no separate serving tier), deployed to **Hugging Face Spaces** (Docker SDK, free CPU, 16 GB RAM).                                                                                               |
 | Model weights | Pushed to a HF model repo `vishalpatil18/heron-phishing`; backend pulls them at startup via `huggingface_hub`. Local dev can override with a folder.                                                                                      |
@@ -36,7 +36,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
                    text CNN (256) + image CNN (512) + metadata MLP (20→64) → fusion → {phishing|legit}
 ```
 
-**Input handling (critical):** the model was built around `.html` email files. To make the demo usable, the backend accepts **`.html` upload, `.eml` upload, and raw pasted text** — all three converge on the existing three-tensor pipeline. Ship sample emails so the dashboard works with zero user input.
+**Input handling (critical):** the model was built around `.html` email files. To make the demo usable, the backend accepts **`.html` upload, `.eml` upload, and raw pasted text** - all three converge on the existing three-tensor pipeline. Ship sample emails so the dashboard works with zero user input.
 
 ---
 
@@ -57,7 +57,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Task 1 — Backend: FastAPI inference service (local)
+## Task 1 - Backend: FastAPI inference service (local)
 
 **Goal:** A FastAPI app that turns an email (html / eml / pasted text) into `{verdict, confidence, signals[]}` using the existing fusion model, running locally.
 
@@ -65,13 +65,13 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 **Files:**
 
-- `backend/app/main.py` — FastAPI app: `GET /health`, `POST /predict`.
-- `backend/app/model.py` — model load + the three-tensor forward pass (reuse architecture + preprocessing from `inference/preprocess_html_and_predict.py` — **do not rewrite the model**, import/copy the existing `TextFeatureExtractor`/`ImageFeatureExtractor`/`DualTowerFusionModel` and the `preprocess_text` / `preprocess_image` / `extract_metadata` functions).
-- `backend/app/emails.py` — parse `.html` (reuse `parse_html_email`), `.eml` (stdlib `email` module → html/text part), and raw text (subject+body) into the common `{subject, body, images}` shape.
-- `backend/app/weights.py` — resolve weights: if `HERON_WEIGHTS_DIR` set, load from there; else `huggingface_hub.hf_hub_download` from `vishalpatil18/heron-phishing` (files: `best_fusion_model.pth`, `vocab_text_1.json`). Cache the loaded model as a module singleton (load once).
-- `backend/samples/phishing_example.html`, `backend/samples/legit_example.html` — 2 sample emails.
-- `backend/requirements.txt` — `fastapi`, `uvicorn[standard]`, `torch` (CPU), `torchvision`, `pillow`, `beautifulsoup4`, `huggingface_hub`, `python-multipart`.
-- `backend/tests/test_predict.py` — pytest.
+- `backend/app/main.py` - FastAPI app: `GET /health`, `POST /predict`.
+- `backend/app/model.py` - model load + the three-tensor forward pass (reuse architecture + preprocessing from `inference/preprocess_html_and_predict.py` - **do not rewrite the model**, import/copy the existing `TextFeatureExtractor`/`ImageFeatureExtractor`/`DualTowerFusionModel` and the `preprocess_text` / `preprocess_image` / `extract_metadata` functions).
+- `backend/app/emails.py` - parse `.html` (reuse `parse_html_email`), `.eml` (stdlib `email` module → html/text part), and raw text (subject+body) into the common `{subject, body, images}` shape.
+- `backend/app/weights.py` - resolve weights: if `HERON_WEIGHTS_DIR` set, load from there; else `huggingface_hub.hf_hub_download` from `vishalpatil18/heron-phishing` (files: `best_fusion_model.pth`, `vocab_text_1.json`). Cache the loaded model as a module singleton (load once).
+- `backend/samples/phishing_example.html`, `backend/samples/legit_example.html` - 2 sample emails.
+- `backend/requirements.txt` - `fastapi`, `uvicorn[standard]`, `torch` (CPU), `torchvision`, `pillow`, `beautifulsoup4`, `huggingface_hub`, `python-multipart`.
+- `backend/tests/test_predict.py` - pytest.
 
 **Approach:**
 
@@ -83,7 +83,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
     "meta": {"images_found": 2, "body_chars": 2847} }
   ```
 - Convert the script's printed "Detected Issues" into the structured `signals` array (reuse the same thresholds already in `predict_phishing`).
-- CORS: allow `*` (public demo API) — note the ceiling in a comment.
+- CORS: allow `*` (public demo API) - note the ceiling in a comment.
 - **Weights bootstrap step (run once, manually, before the backend can serve):** publish the real LFS weights to the HF model repo. Document the exact commands in `backend/README.md`:
   ```bash
   git lfs pull                                   # download the real .pth locally
@@ -103,11 +103,11 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 **Commit:** `feat(backend): FastAPI phishing inference service with html/eml/text input`
 
-**Planning-time notes:** _(Deferred to implementation)_ exact model size may push cold RAM — fine on HF's 16 GB. Torch CPU wheel is large; pin CPU-only index in the Dockerfile (Task 3).
+**Planning-time notes:** _(Deferred to implementation)_ exact model size may push cold RAM - fine on HF's 16 GB. Torch CPU wheel is large; pin CPU-only index in the Dockerfile (Task 3).
 
 ---
 
-## Task 2 — Backend: containerize for HF Spaces
+## Task 2 - Backend: containerize for HF Spaces
 
 **Goal:** A Docker image that runs the FastAPI service and is ready to deploy, verified locally.
 
@@ -115,9 +115,9 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 **Files:**
 
-- `backend/Dockerfile` — python:3.11-slim, install CPU torch (`--index-url https://download.pytorch.org/whl/cpu`), copy app, expose `7860` (HF Spaces default port), `CMD uvicorn app.main:app --host 0.0.0.0 --port 7860`.
+- `backend/Dockerfile` - python:3.11-slim, install CPU torch (`--index-url https://download.pytorch.org/whl/cpu`), copy app, expose `7860` (HF Spaces default port), `CMD uvicorn app.main:app --host 0.0.0.0 --port 7860`.
 - `backend/.dockerignore`.
-- `backend/README.md` — HF Space metadata header (`sdk: docker`, `app_port: 7860`) + the weights-upload commands from Task 1.
+- `backend/README.md` - HF Space metadata header (`sdk: docker`, `app_port: 7860`) + the weights-upload commands from Task 1.
 
 **Approach:** Model weights are **not** baked into the image (they're pulled from HF Hub at startup and cached). Keep the image lean.
 
@@ -133,7 +133,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Task 3 — Deploy backend + model to HF Spaces 🚀 (deploy milestone)
+## Task 3 - Deploy backend + model to HF Spaces 🚀 (deploy milestone)
 
 **Goal:** Backend is live at a public HTTPS URL, model loading from the HF model repo.
 
@@ -158,20 +158,20 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Task 4 — Frontend: scaffold + design system
+## Task 4 - Frontend: scaffold + design system
 
-**Goal:** A Next.js app that boots, with the `DESIGN.md` tokens wired into Tailwind and DM Sans loaded — a styled empty shell.
+**Goal:** A Next.js app that boots, with the `DESIGN.md` tokens wired into Tailwind and DM Sans loaded - a styled empty shell.
 
 **Requirements trace:** R1, R2. **Depends on:** none (can run in parallel with Task 1–3).
 
 **Files:**
 
-- `frontend/` — `create-next-app` (App Router, TS, Tailwind).
-- `frontend/tailwind.config.ts` — colors/spacing/radius/typography from `DESIGN.md` as tokens (`ink`, `canvas`, `surface`, `hairline`, `brand-coral`, `brand-blue`, etc.; radius `full`/`hero`(32px)/`xl`(16px); the DM Sans type scale).
-- `frontend/app/layout.tsx` — DM Sans via `next/font`, base canvas background, `<title>`/OG defaults for Heron.
-- `frontend/app/globals.css` — CSS var bridge for the tokens.
-- `frontend/lib/api.ts` — `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`, prod = the HF Space URL), typed `predict()` client.
-- `frontend/components/ui/` — `Button` (primary black pill / secondary outline / tertiary), `Card`, `Badge` (success/new/beta), matching `DESIGN.md` component specs.
+- `frontend/` - `create-next-app` (App Router, TS, Tailwind).
+- `frontend/tailwind.config.ts` - colors/spacing/radius/typography from `DESIGN.md` as tokens (`ink`, `canvas`, `surface`, `hairline`, `brand-coral`, `brand-blue`, etc.; radius `full`/`hero`(32px)/`xl`(16px); the DM Sans type scale).
+- `frontend/app/layout.tsx` - DM Sans via `next/font`, base canvas background, `<title>`/OG defaults for Heron.
+- `frontend/app/globals.css` - CSS var bridge for the tokens.
+- `frontend/lib/api.ts` - `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`, prod = the HF Space URL), typed `predict()` client.
+- `frontend/components/ui/` - `Button` (primary black pill / secondary outline / tertiary), `Card`, `Badge` (success/new/beta), matching `DESIGN.md` component specs.
 
 **Test scenarios:**
 
@@ -187,18 +187,18 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Task 5 — Frontend: app shell (nav, footer, logo)
+## Task 5 - Frontend: app shell (nav, footer, logo)
 
-**Goal:** Shared chrome across all pages — sticky top nav, dense black footer, Heron logo + wordmark + tagline.
+**Goal:** Shared chrome across all pages - sticky top nav, dense black footer, Heron logo + wordmark + tagline.
 
 **Requirements trace:** R2, R6. **Depends on:** Task 4.
 
 **Files:**
 
-- `frontend/components/HeronLogo.tsx` — inline SVG heron/checkmark mark + "Heron" wordmark (DM Sans 600).
-- `frontend/components/Nav.tsx` — sticky white bar: logo left; links (Product, Benchmarks, Architecture, Research, Team); black-pill "Scan an email" CTA → `/dashboard`. Hamburger < 1024px.
-- `frontend/components/Footer.tsx` — `footer-region` spec (black canvas), columns (Product / Research / Team), Heron wordmark + "Nothing swims past.", GitHub link. Includes the **Team / Hire-us** link (R7).
-- `frontend/app/(marketing)/layout.tsx` — wraps marketing pages with Nav+Footer.
+- `frontend/components/HeronLogo.tsx` - inline SVG heron/checkmark mark + "Heron" wordmark (DM Sans 600).
+- `frontend/components/Nav.tsx` - sticky white bar: logo left; links (Product, Benchmarks, Architecture, Research, Team); black-pill "Scan an email" CTA → `/dashboard`. Hamburger < 1024px.
+- `frontend/components/Footer.tsx` - `footer-region` spec (black canvas), columns (Product / Research / Team), Heron wordmark + "Nothing swims past.", GitHub link. Includes the **Team / Hire-us** link (R7).
+- `frontend/app/(marketing)/layout.tsx` - wraps marketing pages with Nav+Footer.
 
 **Test scenarios:**
 
@@ -212,16 +212,16 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Task 6 — Landing page (content + story)
+## Task 6 - Landing page (content + story)
 
-**Goal:** The marketing page: hero (name + tagline + story), how-it-works, trust/stats, CTA — **static content, animation slot left empty for Task 7.**
+**Goal:** The marketing page: hero (name + tagline + story), how-it-works, trust/stats, CTA - **static content, animation slot left empty for Task 7.**
 
 **Requirements trace:** R1, R5, R6. **Depends on:** Task 5.
 
 **Files:**
 
-- `frontend/app/(marketing)/page.tsx` — hero band (`hero-display` 80px "Nothing swims past.", subtitle telling the AI-phishing story, dual CTA: "Scan an email" + "See the benchmarks"), a placeholder `<HeroScene/>` region beside the hero text, sections: **The problem** (AI made phishing cheaper/faster/convincing), **How Heron sees** (text + logo + metadata → fusion, 3 cards), **Stats strip** (99.45% accuracy, AUC 0.999, 76,346 emails, 352 brands), final CTA card (coral `promo-cta-card`).
-- `frontend/app/(marketing)/sections/*.tsx` — one component per section.
+- `frontend/app/(marketing)/page.tsx` - hero band (`hero-display` 80px "Nothing swims past.", subtitle telling the AI-phishing story, dual CTA: "Scan an email" + "See the benchmarks"), a placeholder `<HeroScene/>` region beside the hero text, sections: **The problem** (AI made phishing cheaper/faster/convincing), **How Heron sees** (text + logo + metadata → fusion, 3 cards), **Stats strip** (99.45% accuracy, AUC 0.999, 76,346 emails, 352 brands), final CTA card (coral `promo-cta-card`).
+- `frontend/app/(marketing)/sections/*.tsx` - one component per section.
 
 **Test scenarios:**
 
@@ -235,24 +235,24 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Task 7 — Hero animation (mac mail → hack → hacker laughs)
+## Task 7 - Hero animation (mac mail → hack → hacker laughs)
 
-**Goal:** The signature animated scene beside the hero text: a macOS Mail window where a mail opens, a spam link is clicked, the machine "gets hacked," and a hacker laughs — looping, self-contained.
+**Goal:** The signature animated scene beside the hero text: a macOS Mail window where a mail opens, a spam link is clicked, the machine "gets hacked," and a hacker laughs - looping, self-contained.
 
 **Requirements trace:** R4. **Depends on:** Task 6.
 
 **Files:**
 
-- `frontend/components/HeroScene.tsx` — Framer Motion timeline.
-- `frontend/components/hero/*` — sub-scenes: `MacMailWindow`, `HackGlitch`, `HackerLaughing` (inline SVG art; no external Lottie/video).
-- `package.json` — add `framer-motion`.
+- `frontend/components/HeroScene.tsx` - Framer Motion timeline.
+- `frontend/components/hero/*` - sub-scenes: `MacMailWindow`, `HackGlitch`, `HackerLaughing` (inline SVG art; no external Lottie/video).
+- `package.json` - add `framer-motion`.
 
 **Approach:** One fixed timeline, 4 beats, autoplay + loop:
 
 1. **Beat 1 (0–2s):** mac window with traffic-light dots + a mail list; an unread "⚠ Your account is suspended" mail sits at top.
 2. **Beat 2 (2–4s):** cursor moves, the mail opens, a red "Verify now" link highlights, cursor clicks it.
 3. **Beat 3 (4–6s):** screen glitch/scanline + green terminal text overlay ("ACCESS GRANTED / downloading…"), a padlock breaks.
-4. **Beat 4 (6–8s):** cut to a hooded hacker silhouette at dual laptops, "ha ha ha" text/laugh shake; then a Heron overlay wipes in — "Heron would've caught this." → loop.
+4. **Beat 4 (6–8s):** cut to a hooded hacker silhouette at dual laptops, "ha ha ha" text/laugh shake; then a Heron overlay wipes in - "Heron would've caught this." → loop.
 
 - Respect `prefers-reduced-motion`: render the final framed still instead of animating.
 
@@ -264,13 +264,13 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 **Verification:** the scene plays the 4 beats and loops; reduced-motion honored.
 
-**Commit:** `feat(frontend): animated hero scene — phishing hack story`
+**Commit:** `feat(frontend): animated hero scene - phishing hack story`
 
-**Planning-time notes:** _(Deferred)_ if hand-built SVG art gets heavy, a single optimized Lottie JSON is an acceptable fallback — decide at build time.
+**Planning-time notes:** _(Deferred)_ if hand-built SVG art gets heavy, a single optimized Lottie JSON is an acceptable fallback - decide at build time.
 
 ---
 
-## Task 8 — Dashboard (scan an email) ⭐ core feature
+## Task 8 - Dashboard (scan an email) ⭐ core feature
 
 **Goal:** The working product: user provides an email (drag-drop `.html`/`.eml`, paste text, or one-click sample) → loader states → results (verdict, confidence gauge, detected signals). Calls the **live backend**.
 
@@ -278,10 +278,10 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 **Files:**
 
-- `frontend/app/dashboard/page.tsx` — the scan UI.
-- `frontend/components/dashboard/UploadZone.tsx` — drag-drop + file picker (`.html`, `.eml`) + "paste text" tab + "Try a sample" (phishing / legit) buttons.
-- `frontend/components/dashboard/ScanProgress.tsx` — staged loader ("Parsing email → Reading text → Inspecting logos → Fusing signals") with a skeleton, driven while the request is in flight.
-- `frontend/components/dashboard/ResultCard.tsx` — verdict badge (phishing = coral, legit = green), animated confidence gauge/ring, `signals[]` list with severity chips, `meta` line.
+- `frontend/app/dashboard/page.tsx` - the scan UI.
+- `frontend/components/dashboard/UploadZone.tsx` - drag-drop + file picker (`.html`, `.eml`) + "paste text" tab + "Try a sample" (phishing / legit) buttons.
+- `frontend/components/dashboard/ScanProgress.tsx` - staged loader ("Parsing email → Reading text → Inspecting logos → Fusing signals") with a skeleton, driven while the request is in flight.
+- `frontend/components/dashboard/ResultCard.tsx` - verdict badge (phishing = coral, legit = green), animated confidence gauge/ring, `signals[]` list with severity chips, `meta` line.
 - `frontend/components/dashboard/EmptyState.tsx` + error state.
 - extends `frontend/lib/api.ts` `predict()`.
 
@@ -301,7 +301,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Task 9 — Architecture page (diagram refactor)
+## Task 9 - Architecture page (diagram refactor)
 
 **Goal:** Replace the ASCII architecture diagram with a clean, responsive visual, on its own page.
 
@@ -310,7 +310,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 **Files:**
 
 - `frontend/app/(marketing)/architecture/page.tsx`.
-- `frontend/components/ArchitectureDiagram.tsx` — SVG (or Mermaid rendered to inline SVG) of: Email input → 3 towers (Text CNN 256-d / Image CNN 512-d / Metadata MLP 20→64) → Concat 832-d → Fusion classifier (512→256→128→2) → verdict. Include the training-strategy note (specialists → freeze+fuse → fine-tune).
+- `frontend/components/ArchitectureDiagram.tsx` - SVG (or Mermaid rendered to inline SVG) of: Email input → 3 towers (Text CNN 256-d / Image CNN 512-d / Metadata MLP 20→64) → Concat 832-d → Fusion classifier (512→256→128→2) → verdict. Include the training-strategy note (specialists → freeze+fuse → fine-tune).
 
 **Approach:** style the diagram in the design system (hairline borders, `card-base`, coral/blue accents per tower). Must scroll horizontally inside its own container on small screens, not break the page.
 
@@ -325,7 +325,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Task 10 — Benchmarks page
+## Task 10 - Benchmarks page
 
 **Goal:** Present the model's results credibly: model-comparison table + fusion metrics, with simple charts.
 
@@ -334,9 +334,9 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 **Files:**
 
 - `frontend/app/(marketing)/benchmarks/page.tsx`.
-- `frontend/components/benchmarks/ModelTable.tsx` — the comparison table (KNN 81.71%, LogReg 80.00%, Text CNN 98.96%, Image CNN 76.30%, ResNet18 97.43%, **Fusion 99.45%** highlighted) using `data-table` spec.
-- `frontend/components/benchmarks/MetricBars.tsx` — bars for Accuracy / AUC 0.999 / Precision 99.5% / Recall 99.4% / F1 99.4% (pure CSS/SVG bars — no chart lib unless one's already added).
-- `frontend/lib/benchmarks.ts` — the numbers as typed data (single source, from README/`Project_Report.pdf`).
+- `frontend/components/benchmarks/ModelTable.tsx` - the comparison table (KNN 81.71%, LogReg 80.00%, Text CNN 98.96%, Image CNN 76.30%, ResNet18 97.43%, **Fusion 99.45%** highlighted) using `data-table` spec.
+- `frontend/components/benchmarks/MetricBars.tsx` - bars for Accuracy / AUC 0.999 / Precision 99.5% / Recall 99.4% / F1 99.4% (pure CSS/SVG bars - no chart lib unless one's already added).
+- `frontend/lib/benchmarks.ts` - the numbers as typed data (single source, from README/`Project_Report.pdf`).
 
 **Test scenarios:**
 
@@ -350,7 +350,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Task 11 — Research page + Hire-the-developer (Team) page
+## Task 11 - Research page + Hire-the-developer (Team) page
 
 **Goal:** (a) A research page presenting the paper we wrote; (b) a Team/"hire us" page focused on Vishal, mentioning the others; both linked from footer(s).
 
@@ -358,11 +358,11 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 **Files:**
 
-- `frontend/app/(marketing)/research/page.tsx` — formatted research page: title, abstract, key contributions, method summary, results, references — content transcribed from `docs/Project_Report.pdf`. Include a **"Download the paper (PDF)"** button; copy `docs/Project_Report.pdf` → `frontend/public/heron-research.pdf`.
-- `frontend/app/(marketing)/team/page.tsx` — hero focused on **Vishal Patil** (bio, role, GitHub `github.com/VishalPatil18`, "hire me" CTA — leave a `mailto:`/link slot for Vishal to fill), then a team grid mentioning **Akash Vora**, **Srihari Narayan**, **Anila Sai Namburi** with their GitHub links (from README).
+- `frontend/app/(marketing)/research/page.tsx` - formatted research page: title, abstract, key contributions, method summary, results, references - content transcribed from `docs/Project_Report.pdf`. Include a **"Download the paper (PDF)"** button; copy `docs/Project_Report.pdf` → `frontend/public/heron-research.pdf`.
+- `frontend/app/(marketing)/team/page.tsx` - hero focused on **Vishal Patil** (bio, role, GitHub `github.com/VishalPatil18`, "hire me" CTA - leave a `mailto:`/link slot for Vishal to fill), then a team grid mentioning **Akash Vora**, **Srihari Narayan**, **Anila Sai Namburi** with their GitHub links (from README).
 - ensure Footer (Task 5) + dashboard footer (Task 8) both link `/team`.
 
-**Approach:** research page is static, typeset in `docs-prose-block` style (≤720px prose column). Team page uses `ai-product-tile`/avatar-circle patterns. **Content placeholders:** Vishal's bio/photo/contact and teammate roles are yours to supply — mark them with `{/* TODO: Vishal bio */}` so the page ships now and fills in later.
+**Approach:** research page is static, typeset in `docs-prose-block` style (≤720px prose column). Team page uses `ai-product-tile`/avatar-circle patterns. **Content placeholders:** Vishal's bio/photo/contact and teammate roles are yours to supply - mark them with `{/* TODO: Vishal bio */}` so the page ships now and fills in later.
 
 **Test scenarios:**
 
@@ -376,7 +376,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Task 12 — Deploy frontend to Vercel + wire to backend 🚀 (deploy milestone)
+## Task 12 - Deploy frontend to Vercel + wire to backend 🚀 (deploy milestone)
 
 **Goal:** The whole product is live: Vercel frontend talking to the HF backend, end-to-end.
 
@@ -385,7 +385,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 **Approach:**
 
 - Set `NEXT_PUBLIC_API_URL` = the HF Space URL in Vercel project env.
-- Confirm backend CORS allows the Vercel domain (already `*` from Task 1 — verify).
+- Confirm backend CORS allows the Vercel domain (already `*` from Task 1 - verify).
 - Deploy; smoke-test every page + a live scan from the production frontend.
 - Add production OG/meta + favicon (Heron mark) if not already; update root `README.md` with the two live URLs.
 
@@ -401,7 +401,7 @@ Browser ──HTTPS──> Vercel (Next.js: landing, dashboard, benchmarks, arch
 
 ---
 
-## Optional Task 13 — Polish pass
+## Optional Task 13 - Polish pass
 
 **Goal:** Tighten before showing it off. Only if time allows.
 
@@ -431,9 +431,9 @@ Task 4 (scaffold) ─► Task 5 (shell) ─┬─► Task 6 ─► Task 7 (hero 
                                      Task 12 (deploy frontend 🚀) ─► Task 13 (polish)
 ```
 
-Tasks 1–3 (backend) and Task 4–5 (frontend base) are independent — start whichever you like first. Task 8 is the only frontend task that hard-requires the live backend (Task 3).
+Tasks 1–3 (backend) and Task 4–5 (frontend base) are independent - start whichever you like first. Task 8 is the only frontend task that hard-requires the live backend (Task 3).
 
-## Outstanding content you supply (non-blocking — pages ship with placeholders)
+## Outstanding content you supply (non-blocking - pages ship with placeholders)
 
 - Vishal's bio, photo, and contact/"hire me" link for `/team`.
 - Optional short roles/blurbs for Akash, Srihari, Anila.
