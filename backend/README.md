@@ -1,3 +1,13 @@
+---
+title: Heron API
+emoji: 🐦
+colorFrom: gray
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Heron API - phishing inference service
 
 FastAPI service that turns an email (`.html` / `.eml` / pasted text) into
@@ -74,3 +84,27 @@ git lfs pull                                   # download the real .pth locally
 hf upload vishalpatil18/heron-phishing models/best_fusion_model.pth --repo-type=model
 hf upload vishalpatil18/heron-phishing data/vocab_text_1.json --repo-type=model
 ```
+
+## Deploy (Docker / Hugging Face Spaces)
+
+The service ships as a Docker image (HF Spaces Docker SDK). Weights are **not**
+baked into the image — they're pulled from `vishalpatil18/heron-phishing` on first
+boot and cached, so run the one-time weights bootstrap above before deploying.
+
+Verify the image locally:
+
+```bash
+cd backend
+docker build -t heron-api .
+docker run --rm -p 7860:7860 heron-api        # watch logs for the HF weight download on first boot
+```
+
+```bash
+curl localhost:7860/health
+curl -F file=@samples/phishing_example.html localhost:7860/predict
+```
+
+The Space metadata (`sdk: docker`, `app_port: 7860`) is declared in the YAML header
+at the top of this file — HF reads it when `backend/` is pushed as the Space repo.
+Deploying to the live Space is Task 3.
+

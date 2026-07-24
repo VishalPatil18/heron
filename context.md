@@ -33,6 +33,7 @@ Copy this block for each new session. **Newest entries go at the TOP of Session 
 - `backend/app/weights.py` - `resolve_weights()` (`HERON_WEIGHTS_DIR` env or HF Hub `vishalpatil18/heron-phishing`) + `get_model()` load-once singleton.
 - `backend/app/main.py` - `GET /health`, `POST /predict` (multipart `file` OR JSON `{text, subject}`), CORS `*`.
 - Samples in `backend/samples/`, tests in `backend/tests/test_predict.py`.
+- Containerized: `backend/Dockerfile` + `.dockerignore` (HF Spaces Docker SDK, port 7860); CPU torch, weights pulled at startup (not baked in).
 
 **Frontend:** not started. Planned: Next.js App Router + TS + Tailwind → Vercel.
 
@@ -66,6 +67,16 @@ pytest                                        # 8 tests, stubbed model - no real
 ---
 
 ## Session History
+
+### Backend containerized for Hugging Face Spaces (Docker)
+
+**What was done:** Added the Docker image for the FastAPI backend targeting HF Spaces (Docker SDK, port 7860) — CPU-only torch, weights pulled at startup (not baked in). Verified the served app still imports (8 pytest green) and `COPY` paths exist; local `docker build`/`run` **not** executed (no Docker daemon in this dev environment).
+**Files touched:**
+- `backend/Dockerfile` (create) — `python:3.11-slim`; installs `torch torchvision` from the PyTorch **cpu** index *before* `-r requirements.txt` so the unpinned torch never resolves to the ~2 GB CUDA wheel; `COPY app` + `COPY samples`; `EXPOSE 7860`; `CMD uvicorn app.main:app --host 0.0.0.0 --port 7860`.
+- `backend/.dockerignore` (create) — excludes `__pycache__/`, `.pytest_cache/`, venvs, `.weights/`, `tests/`, `*.md`.
+- `backend/README.md` (update) — HF Space YAML header (`sdk: docker`, `app_port: 7860`) + "Deploy (Docker / HF Spaces)" section with local build/run verify commands.
+**Decisions:** CPU torch installed via `--index-url https://download.pytorch.org/whl/cpu` first → keeps the image lean and off CUDA. Runs as **root** (HF Docker Spaces permit it); add a non-root `USER` only if HF flags permissions at deploy. Weights **not** baked in — pulled from `vishalpatil18/heron-phishing` at startup and cached.
+**Open questions / follow-ups:** Local `docker build`/`run` unverified in this env — run the commands in `backend/README.md` before Task 3. Free-tier HF cache is ephemeral → cold start re-downloads weights.
 
 ### README rebrand to Heron + setup/startup guide
 
@@ -106,3 +117,5 @@ pytest                                        # 8 tests, stubbed model - no real
 
 - [ ] One-time HF weights upload (`best_fusion_model.pth`, `vocab_text_1.json`) to `vishalpatil18/heron-phishing` - blocks deployed backend serving.
 - [ ] Confirm HF model-repo name `vishalpatil18/heron-phishing` before the upload.
+- [ ] Verify the Docker image locally (`docker build`/`run` — not runnable in the dev env): `/health` 200 + `/predict` on the phishing sample.
+- [ ] Task 3: create Space `vishalpatil18/heron-api` (Docker SDK), push `backend/`, confirm build + model download + `/predict`; record the live URL as `NEXT_PUBLIC_API_URL`.
