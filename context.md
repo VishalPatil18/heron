@@ -30,7 +30,7 @@ Copy this block for each new session. **Newest entries go at the TOP of Session 
 
 - `backend/app/model.py` - model classes + `preprocess_image`/`extract_metadata` copied verbatim from `inference/preprocess_html_and_predict.py`; `preprocess_text` uses a preloaded `stoi`; `build_model`, `build_signals`, `run_prediction`.
 - `backend/app/emails.py` - `parse_html` / `parse_eml` / `parse_text` / `parse_upload` → common `{subject, body, images}`.
-- `backend/app/weights.py` - `resolve_weights()` (`HERON_WEIGHTS_DIR` env or HF Hub `vishalpatil18/heron-phishing`) + `get_model()` load-once singleton.
+- `backend/app/weights.py` - `resolve_weights()` (`HERON_WEIGHTS_DIR` env or HF Hub `vishalpatil-18/heron-phishing`, repo id overridable via `HERON_HF_REPO`) + `get_model()` load-once singleton.
 - `backend/app/main.py` - `GET /health`, `POST /predict` (multipart `file` OR JSON `{text, subject}`), CORS `*`.
 - Samples in `backend/samples/`, tests in `backend/tests/test_predict.py`.
 - Containerized: `backend/Dockerfile` + `.dockerignore` (honors `$PORT`, default 8080); CPU torch, weights pulled at startup from the free HF model repo (not baked in). Deploys to **Google Cloud Run** via `gcloud run deploy --source` (Cloud Build — no local Docker needed).
@@ -49,7 +49,7 @@ uvicorn app.main:app --reload                # http://localhost:8000
 pytest                                        # 8 tests, stubbed model - no real weights needed
 ```
 
-**Deploy targets (free tier only):** backend → **Google Cloud Run** (Docker, scale-to-zero, `--max-instances 1`); frontend → Vercel. Weights pulled from the free HF model repo at startup. `NEXT_PUBLIC_API_URL` = the Cloud Run service URL (assigned at deploy — has a random hash, e.g. `https://heron-api-<hash>-uc.a.run.app`).
+**Deploy targets (free tier only):** backend → **Google Cloud Run** (Docker, scale-to-zero, `--max-instances 1`); frontend → Vercel. Weights pulled from the free HF model repo at startup. `NEXT_PUBLIC_API_URL` = `https://heron-api-5b5e3oikja-uc.a.run.app` (the live Cloud Run service).
 
 ---
 
@@ -127,7 +127,7 @@ pytest                                        # 8 tests, stubbed model - no real
 ## Open Questions / TODOs
 
 - [ ] Install prereqs on the dev machine: `git-lfs`, `hf` CLI, `gcloud` CLI (+ a GCP project with billing enabled).
-- [ ] One-time weights upload to the **free** HF model repo `vishalpatil18/heron-phishing` (`git lfs pull` → `hf repos create --type model` → `hf upload … --type model`) — blocks the deployed backend serving.
+- [x] One-time weights upload to the **free** HF model repo `vishalpatil-18/heron-phishing` (`git lfs pull` → `hf repos create --type model` → `hf upload … --type model`) — blocks the deployed backend serving.
 - [ ] Deploy backend to Cloud Run: `gcloud run deploy heron-api --source . --region us-central1 --allow-unauthenticated --memory 2Gi --max-instances 1 --timeout 300`; confirm `/health` + `/predict`.
 - [ ] Capture the Cloud Run URL → set as `NEXT_PUBLIC_API_URL` (Task 4/12); update root `README.md` live URL (Task 12).
 - [ ] (Optional) verify the image locally with Docker before deploy — not required (Cloud Build builds from source).

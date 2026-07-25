@@ -267,7 +267,7 @@ pytest
 `multipart/form-data` (field `file`, a `.html` / `.eml` / `.txt` upload) or JSON
 `{ "text": "...", "subject": "..." }`. The model loads lazily on the first
 `/predict`. If `HERON_WEIGHTS_DIR` is unset, weights are pulled from the Hugging
-Face model repo `vishalpatil18/heron-phishing` and cached. See
+Face model repo `vishalpatil-18/heron-phishing` and cached. See
 [`backend/README.md`](./backend/README.md) for the deploy + weights-upload guide.
 
 ### Track B - Reproduce the ML pipeline

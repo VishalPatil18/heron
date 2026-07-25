@@ -10,7 +10,7 @@ from pathlib import Path
 
 from app.model import build_model
 
-HF_REPO_ID = "vishalpatil18/heron-phishing"
+HF_REPO_ID = os.environ.get("HERON_HF_REPO", "vishalpatil-18/heron-phishing")
 WEIGHTS_FILE = "best_fusion_model.pth"
 VOCAB_FILE = "vocab_text_1.json"
 

@@ -24,7 +24,7 @@ uvicorn app.main:app --reload
 > root first, or the loader gets a pointer stub instead of real weights.
 
 Without `HERON_WEIGHTS_DIR`, weights are pulled from the HF model repo
-`vishalpatil18/heron-phishing` and cached by `huggingface_hub`.
+`vishalpatil-18/heron-phishing` and cached by `huggingface_hub`.
 
 ## Try it
 
@@ -67,16 +67,16 @@ Tests use a stubbed model, so they pass without real weights.
 ## One-time weights bootstrap (before the deployed backend can serve)
 
 The backend pulls its weights at startup from the **free** HF model repo
-`vishalpatil18/heron-phishing` (model storage is free — only Space *compute* costs
+`vishalpatil-18/heron-phishing` (model storage is free — only Space *compute* costs
 money). Publish the real LFS weights there once. Requires `git-lfs` and the `hf`
 CLI installed (`brew install git-lfs`; `curl -LsSf https://hf.co/cli/install.sh | bash -s`):
 
 ```bash
 git lfs install && git lfs pull                # download the real .pth locally (not the pointer stubs)
 hf auth login                                  # authenticate the CLI
-hf repos create vishalpatil18/heron-phishing --type model --exist-ok
-hf upload vishalpatil18/heron-phishing models/best_fusion_model.pth --type model
-hf upload vishalpatil18/heron-phishing data/vocab_text_1.json      --type model
+hf repos create vishalpatil-18/heron-phishing --type model --exist-ok
+hf upload vishalpatil-18/heron-phishing models/best_fusion_model.pth --type model
+hf upload vishalpatil-18/heron-phishing data/vocab_text_1.json      --type model
 ```
 
 ## Optional: verify the Docker image locally
