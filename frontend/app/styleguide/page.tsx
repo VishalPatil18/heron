@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 
-export default function Home() {
+// Dev reference (no nav/footer): the DESIGN.md primitives + type scale on one page.
+export default function StyleGuide() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-20 space-y-16">
       <section className="space-y-4">

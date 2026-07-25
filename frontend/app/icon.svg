@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <style>.m{stroke:#0a0a0a}.d{fill:#0a0a0a}@media(prefers-color-scheme:dark){.m{stroke:#fff}.d{fill:#fff}}</style>
+  <g class="m" fill="none" stroke-width="2.6" stroke-linecap="round">
+    <path d="M24 27 C 18 21, 12 15, 5 13"/>
+    <path d="M24 27 C 30 21, 36 15, 43 13"/>
+  </g>
+  <g class="m" fill="none" stroke-width="1.6" stroke-linecap="round">
+    <path d="M24 27 L 22 36"/>
+    <path d="M24 27 L 26 36"/>
+  </g>
+  <circle class="d" cx="24" cy="24" r="2.1"/>
+</svg>

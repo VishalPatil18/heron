@@ -35,7 +35,7 @@ Copy this block for each new session. **Newest entries go at the TOP of Session 
 - Samples in `backend/samples/`, tests in `backend/tests/test_predict.py`.
 - Containerized: `backend/Dockerfile` + `.dockerignore` (honors `$PORT`, default 8080); CPU torch, weights pulled at startup from the free HF model repo (not baked in). Deploys to **Google Cloud Run** via `gcloud run deploy --source` (Cloud Build — no local Docker needed).
 
-**Frontend:** scaffolded in `frontend/` — Next.js 16.2 (App Router, Turbopack) + React 19 + TypeScript + **Tailwind v4** (CSS-first `@theme`, no `tailwind.config`). DESIGN.md tokens live in `frontend/app/globals.css @theme`; DM Sans via `next/font`; light-mode only. Primitives in `frontend/components/ui/` (`Button`, `Card`, `Badge`); typed API client in `frontend/lib/api.ts`. `create-next-app` also dropped `frontend/CLAUDE.md`+`AGENTS.md` (Next-16 "read node_modules/next/dist/docs before coding" guidance — kept). Deploy target: Vercel (Task 12).
+**Frontend:** scaffolded in `frontend/` — Next.js 16.2 (App Router, Turbopack) + React 19 + TypeScript + **Tailwind v4** (CSS-first `@theme`, no `tailwind.config`). DESIGN.md tokens live in `frontend/app/globals.css @theme`; DM Sans via `next/font`; light-mode only. Primitives in `frontend/components/ui/` (`Button`, `Card`, `Badge`); typed API client in `frontend/lib/api.ts`. `create-next-app` also dropped `frontend/CLAUDE.md`+`AGENTS.md` (Next-16 "read node_modules/next/dist/docs before coding" guidance — kept). **App shell:** `HeronLogo`/`Nav`/`Footer` in `frontend/components/`, wired via `frontend/app/(marketing)/layout.tsx` (sticky nav → hamburger < `lg`, black footer). Marketing routes `/`, `/benchmarks`, `/architecture`, `/research`, `/team` + `/dashboard` are placeholder stubs (Tasks 6–11 fill them); the design-system demo moved to `/styleguide`. Deploy target: Vercel (Task 12).
 
 **Existing ML code (do not modify):** `src/`, `inference/`, `notebooks/`, `models/`, `data/`.
 
@@ -68,6 +68,30 @@ pytest                                        # 8 tests, stubbed model - no real
 ---
 
 ## Session History
+
+### Logo redesign — heron in flight
+
+**What was done:** Replaced the weak checkmark logo with a heron-in-flight mark — arched wings, head between them, legs trailing (concept "F1 / Arched", chosen from rendered concept sets). Added a theme-adaptive SVG favicon.
+**Files touched:**
+- `frontend/components/HeronLogo.tsx` (update) — F1 arched-wings mark (viewBox 48, `currentColor` so it's ink on nav / white on footer).
+- `frontend/app/icon.svg` (create) — favicon, `prefers-color-scheme`-adaptive (black on light tabs, white on dark). Removed the default `app/favicon.ico`.
+**Decisions:** User picked from a 6-concept exploration → then 5 flight variations → "F1 Arched". Build clean, verified in the nav.
+**Open questions / follow-ups:** none.
+
+### Task 5 — Frontend app shell (logo, nav, footer)
+
+**What was done:** Built the shared chrome — Heron logo (SVG mark = checkmark/heron head + wordmark), sticky white nav (desktop links + black-pill CTA, hamburger drawer < `lg`), and dense black footer (columns + tagline + GitHub) — wrapped around marketing pages via an `app/(marketing)/layout.tsx` route group. `npm run build` passes (8 routes); verified desktop nav + footer and the mobile hamburger→drawer in the browser.
+**Files touched:**
+- `frontend/components/HeronLogo.tsx` (create) — inline SVG, `currentColor` so parent sets color (ink on nav, white on footer); `size`/`showWordmark` props.
+- `frontend/components/Nav.tsx` (create) — `'use client'`; sticky `hairline-soft` bar, links, hamburger `useState`; CTA is a `<Link>` styled as the primary pill (a `<button>` inside `<a>` is invalid HTML — minor class duplication of `button-primary`, noted).
+- `frontend/components/Footer.tsx` (create) — `footer-region`, columns Product/Research/Team (incl. Team/hire-us R7), GitHub link.
+- `frontend/app/(marketing)/layout.tsx` (create) — `min-h-screen` flex wrapper: `<Nav/>` + `<main>` + `<Footer/>`.
+- `frontend/app/(marketing)/{page,benchmarks,architecture,research,team}/…page.tsx` (create) — landing + 4 stub pages so nav links resolve.
+- `frontend/app/dashboard/page.tsx` (create) — CTA-target stub (kept out of `(marketing)`; gets its own chrome in Task 8).
+- `frontend/app/styleguide/page.tsx` (create) + removed `frontend/app/page.tsx` — moved the Task 4 design demo out of `/` so the `(marketing)` group owns it.
+- `context.md` (update) — Current State + this entry.
+**Decisions:** Route group `(marketing)` owns `/` → the Task-4 scratch page had to move (to `/styleguide`, kept as a dev reference). Stub pages created for every nav destination so the shell is navigable now (Tasks 6/9/10/11 replace). CTA rendered as a styled `<Link>`, not `<Button>`, for valid/accessible nav markup.
+**Open questions / follow-ups:** Hero placeholder shows 80px unscaled on mobile — responsive hero scaling is Task 6's job. `/dashboard` + the 4 marketing stubs are placeholders.
 
 ### Task 4 — Frontend scaffold + DESIGN.md design system
 
