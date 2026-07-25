@@ -69,6 +69,74 @@ pytest                                        # 8 tests, stubbed model - no real
 
 ## Session History
 
+### Animate hero chip dot + stats count-up
+
+**What was done:** Made the coral status dot in the Hero "Phishing defense · live" chip pulse (CSS `animate-ping` ring behind a solid dot — no JS). Added a framer-driven count-up to StatsStrip: each stat animates from 0 to its value on scroll-into-view (easeOut, 1.6s), formatted with `toLocaleString` so it lands exactly on the originals (`99.45%`, `0.999`, `76,346`, `352`) and groups mid-animation. Installed `motion` (framer-motion, v12).
+**Files touched:**
+- `frontend/package.json` (update) - added `motion` dependency (explicitly requested; free/OSS, React 19 compatible)
+- `frontend/app/(marketing)/sections/Hero.tsx` (update) - status dot now a relative span with an `animate-ping` coral ring
+- `frontend/app/(marketing)/sections/StatsStrip.tsx` (update) - now a client component; stat data holds `{value:number, decimals, suffix}`; `Counter` uses `useMotionValue`/`animate`/`useTransform`/`useInView` (once), with `useReducedMotion` snapping straight to the value
+**Decisions:** Dot pulse in pure CSS (`animate-ping`), not framer → native platform covers it. Count-up via framer per explicit request. Numeric stat data + `toLocaleString` (not hardcoded strings) so the animated value formats identically to the target.
+**Open questions / follow-ups:** Count-up scroll trigger couldn't be visually verified in the preview pane (headless viewport is 0×0, so IntersectionObserver never fires); formatting verified via Node, pulse verified in DOM.
+
+### Unify logo lockup (name + tagline) everywhere
+
+**What was done:** Made the Footer and FinalCta render the same logo lockup as the Nav — mark on the left, "Heron" with the "Nothing swims past." tagline stacked below it on the right — by passing `<HeronLogo tagline />` and deleting their separate `<p>` taglines. Changed the tagline color in `HeronLogo` from hardcoded `text-steel` (#5f5f5f) to `text-current opacity-60` so it stays legible on both the light nav and the dark footer/CTA. Verified via computed styles: nav ink@60% on white, footer + CTA white@60% on dark.
+**Files touched:**
+- `frontend/components/HeronLogo.tsx` (update) - tagline uses `text-current opacity-60` instead of `text-steel`, so it adapts to its container's text color
+- `frontend/components/Footer.tsx` (update) - `<HeronLogo tagline />`, removed standalone tagline `<p>`
+- `frontend/app/(marketing)/sections/FinalCta.tsx` (update) - `<HeronLogo tagline />`, removed the wrapping `flex-col` + tagline `<p>`
+**Decisions:** currentColor + opacity over a per-site color prop → one component reads correctly on any background without adding props. Nav shifts from #5f5f5f to ink@60% (≈#666) - a negligible visual change that keeps the lockup uniform.
+**Open questions / follow-ups:** none
+
+### Retime hero animation to 15s (inbox +1s, Heron +2s)
+
+**What was done:** Stretched the hero animation from 11s to **15s** with per-beat control (not a uniform slow-down): inbox 0→3s (+1s), reader/click 3–7s, glitch/terminal 7–9s, hacker 9–10.6s, Heron finale 10.6–15s (+2s). Every keyframe % across all 14 beat animations was piecewise-remapped to the new timeline; the short independent loops (rgb/bars/caret) left as-is. Verified `animation-duration: 15s` and the click still lands (cursor tip (143,300) inside the button box).
+**Files touched:**
+- `frontend/app/(marketing)/sections/HeroScene.module.css` (update) - `11s`→`15s` durations; all keyframe percentages recomputed for the new beat boundaries.
+**Decisions:** Piecewise beat retiming over a uniform `11s→15s` stretch - keeps the action beats (click, glitch, hacker) snappy and only lengthens the inbox + Heron holds, matching the request. The extra second (15 − 11 − 1 − 2) went to the reader/click beat.
+**Open questions / follow-ups:** none.
+
+### Fix hero animation - cursor click alignment + robust scaling
+
+**What was done:** Fixed the cursor missing the "Log in to verify account" button and removed the "See the detection" pill. Root cause: the animation uses fixed 640px pixel keyframes, but the stage rendered at other widths (equal-column hero), so the cursor drifted off the button. Made the stage a fixed **640×520 coordinate space** that a `ResizeObserver` scales to fit its container (robust at any width), and retargeted the cursor's login-click keyframes to the button's measured center. Verified: at the click frame the cursor tip (143,299) sits inside the button box (x 31-252, y 276-320).
+**Files touched:**
+- `frontend/app/(marketing)/sections/HeroScene.tsx` (update) - now a client component; `.hsFrame` wrapper + `ResizeObserver` setting `--hs-scale`; removed the "See the detection" pill.
+- `frontend/app/(marketing)/sections/HeroScene.module.css` (update) - `.hsStage` fixed 640×520 + `transform: scale(var(--hs-scale))`; new `.hsFrame` (responsive box holding border/radius/shadow); cursor login-click keyframes 137,401 → 140,296.
+- `frontend/app/(marketing)/sections/Hero.tsx` (update) - grid back to `lg:grid-cols-2` (scaling handles width).
+- `context.md` (update) - this entry.
+**Decisions:** Scale-to-fit (fixed 640×520 + ResizeObserver) over pinning a 640px column - robust at all widths and keeps cursor + button in one coordinate space. The runtime scale is the one dynamic value, set as a CSS variable via the observer; all static styling stays in classes.
+**Open questions / follow-ups:** none.
+
+### Task 7 - Hero animation + nav tagline + design hero text
+
+**What was done:** Ported the 11s hero animation from `heron-design/HeroScene.dc.html` (inbox → open the phishing mail → click its login → glitch → terminal "ACCESS GRANTED" → hacker → Heron wipe "would've caught this") as a scoped CSS module. Hero text now matches the design: coral eyebrow "Phishing defense · live demo" + "One click is all it takes. **Heron catches it before you do.**" (second sentence coral). Navbar logo shows "Nothing swims past." tagline under the wordmark. Build clean; animation verified cycling beats in the browser.
+**Files touched:**
+
+- `frontend/app/(marketing)/sections/HeroScene.tsx` (create) - stage markup (server component, pure CSS, `role="img"` + aria-label).
+- `frontend/app/(marketing)/sections/HeroScene.module.css` (create) - animation CSS ported verbatim (keyframes + `prefers-reduced-motion` → final Heron still).
+- `frontend/public/hero-hacker.jpg` (create) - hacker frame copied from `heron-design/uploads/18005.jpg` (5.6 MB).
+- `frontend/app/(marketing)/sections/Hero.tsx` (update) - design eyebrow + headline; renders `<HeroScene/>`.
+- `frontend/components/HeronLogo.tsx` (update) - optional `tagline` prop ("Nothing swims past." under the wordmark).
+- `frontend/components/Nav.tsx` (update) - passes `tagline`.
+- `frontend/app/layout.tsx` (update) - JetBrains Mono via `next/font` (`--font-mono` for the terminal/mono text).
+- `context.md` (update) - this entry.
+  **Decisions:** Ported the existing **pure-CSS** animation (no framer-motion) per the user's instruction - deviates from plan.md Task 7's framer-motion but matches the supplied design. Animation lives in a CSS module (modular, no inline CSS); the design's few inline styles → Tailwind utilities. Dropped the unused inline hacker SVG (was `display:none`; the `<img>` is the hacker in both motion + reduced-motion). "Nothing swims past." moved off the hero headline → now the navbar tagline + end card.
+  **Open questions / follow-ups:** `hero-hacker.jpg` is 5.6 MB - compress/optimize in the Task 13 polish pass. Animation loops indefinitely by design.
+
+### UI polish - Sentinel logo, hero remix, end card (from heron-design)
+
+**What was done:** Adopted the `heron-design/` brand kit. Logo swapped to the **"Sentinel"** standing-heron mark (coral eye + coral waterline, faces right) as the horizontal lockup; new app-icon favicon; hero now leads with a small **black** kicker ("One click is all it takes. Heron catches it before you do.") over a **red** "Nothing swims past." headline; the final section became the black **HERO SCENE END CARD** (logo + tagline, then "Heron would've caught this." + CTA). Build clean; hero verified via screenshot, end card via DOM.
+**Files touched:**
+
+- `frontend/components/HeronLogo.tsx` (update) - Sentinel mark; bird `fill-current`/`stroke-current`, coral eye/waterline `fill-brand-coral`/`stroke-brand-coral` (no inline CSS). Nav + Footer inherit it automatically (currentColor = ink on nav, white on footer).
+- `frontend/app/icon.svg` (update) - APP ICON (coral rounded square + white mark, no waterline).
+- `frontend/app/(marketing)/sections/Hero.tsx` (update) - black kicker + red `text-brand-coral` headline; kept the two CTAs (Scan an email / See the benchmarks) + reserved scene box.
+- `frontend/app/(marketing)/sections/FinalCta.tsx` (update) - black `bg-ink` end card, logo + tagline top, "Heron would've **caught** this." (caught in coral), white-pill CTA.
+- `context.md` (update) - this entry.
+  **Decisions:** Logo switched from the F1 flight mark to the Sentinel (design-folder choice supersedes the earlier F1). All colours via Tailwind `fill-`/`stroke-`/`text-` classes + tokens; coral = existing `brand-coral` (#ff5530). Design source: `heron-design/Heron Logo.dc.html` + `HeroScene.dc.html`.
+  **Open questions / follow-ups:** The hero **animation** (mac-mail to click to hack to Heron wipe) stays **Task 7** - the full storyboard + CSS is in `heron-design/HeroScene.dc.html`, ready to port. Browser pane wouldn't screenshot scrolled sections (env); end card verified via DOM.
+
 ### Task 6 - Landing page (AI-phishing story + stats)
 
 **What was done:** Built the marketing landing (`app/(marketing)/page.tsx`) from five section components - hero (tagline + story + dual CTA + reserved HeroScene box), "AI supercharged phishing", "how Heron sees" (3 modality cards), stats strip, coral final CTA. Made `Button` polymorphic to kill CTA class duplication. Build clean (9 routes); sections verified rendering top-to-bottom via DOM text + hero screenshot.

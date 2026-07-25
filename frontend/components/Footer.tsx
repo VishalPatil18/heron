@@ -3,20 +3,19 @@ import { HeronLogo } from "./HeronLogo";
 
 const columns = [
   {
-    title: "Product",
+    title: "Research",
     links: [
-      { label: "Scan an email", href: "/dashboard" },
+      { label: "The paper", href: "/research" },
       { label: "Benchmarks", href: "/benchmarks" },
       { label: "Architecture", href: "/architecture" },
     ],
   },
   {
-    title: "Research",
-    links: [{ label: "The paper", href: "/research" }],
-  },
-  {
-    title: "Team",
-    links: [{ label: "Team & hire us", href: "/team" }],
+    title: "Developers",
+    links: [
+      { label: "Team", href: "/team" },
+      { label: "Hire Me", href: "/hire-me" },
+    ],
   },
 ];
 
@@ -26,8 +25,8 @@ export function Footer() {
       <div className="mx-auto max-w-[1280px] px-8 py-16">
         <div className="flex flex-col gap-12 md:flex-row md:justify-between">
           <div className="max-w-xs space-y-3">
-            <HeronLogo />
-            <p className="text-body-sm text-muted">Nothing swims past.</p>
+            <HeronLogo tagline />
+            <br />
             <a
               href="https://github.com/VishalPatil18/heron"
               target="_blank"
@@ -35,6 +34,15 @@ export function Footer() {
               className="text-body-sm text-muted inline-block"
             >
               GitHub ↗
+            </a>
+            <br />
+            <a
+              href="https://github.com/VishalPatil18/heron"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-body-sm text-muted inline-block"
+            >
+              Hugging Face ↗
             </a>
           </div>
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
@@ -56,7 +64,7 @@ export function Footer() {
         </div>
         <p className="text-micro text-muted mt-12">
           © {new Date().getFullYear()} Heron - a multimodal phishing-detection
-          demo.
+          system.
         </p>
       </div>
     </footer>

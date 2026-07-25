@@ -24,7 +24,7 @@ export function Nav() {
     <header className="sticky top-0 z-50 bg-canvas border-b border-hairline-soft">
       <nav className="mx-auto max-w-[1280px] px-6 h-16 flex items-center justify-between">
         <Link href="/" className="text-ink" onClick={() => setOpen(false)}>
-          <HeronLogo />
+          <HeronLogo tagline />
         </Link>
 
         <div className="hidden lg:flex items-center gap-8">
