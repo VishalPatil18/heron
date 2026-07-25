@@ -49,7 +49,7 @@ uvicorn app.main:app --reload                # http://localhost:8000
 pytest                                        # 8 tests, stubbed model - no real weights needed
 ```
 
-**Deploy targets (free tier only):** backend → **Google Cloud Run** (Docker, scale-to-zero, `--max-instances 1`); frontend → Vercel. Weights pulled from the free HF model repo at startup. `NEXT_PUBLIC_API_URL` = `https://heron-api-5b5e3oikja-uc.a.run.app` (the live Cloud Run service).
+**Deploy targets (free tier only):** backend → **Google Cloud Run** (Docker, scale-to-zero, `--max-instances 1`); frontend → Vercel. Weights pulled from the free HF model repo at startup. `NEXT_PUBLIC_API_URL` = `https://heron-api-787333291568.us-central1.run.app` (the **live** Cloud Run service — verified serving correct verdicts).
 
 ---
 
@@ -68,6 +68,34 @@ pytest                                        # 8 tests, stubbed model - no real
 ---
 
 ## Session History
+
+### Bake model weights into the image (HF-free serving)
+
+**What was done:** Removed the runtime Hugging Face dependency and the ~136 MB cold-start download by baking the weights into the Cloud Run image. Weights are staged into a gitignored `backend/weights/` folder and `COPY`ed in; `HERON_WEIGHTS_DIR=/app/weights` makes `weights.py` load them off local disk. Spec: `docs/superpowers/specs/2026-07-24-bake-model-weights-into-image-design.md`; plan: `docs/superpowers/plans/2026-07-24-bake-model-weights-into-image.md`. 10 pytest green (incl. a real-staged-weights integration test that loads the 136 MB model and predicts `phishing`).
+**Files touched:**
+- `backend/Dockerfile` (update) — `COPY weights ./weights` + `ENV HERON_WEIGHTS_DIR=/app/weights`; dropped the stale "weights not baked" comment.
+- `backend/.gcloudignore` (create) — keeps `weights/` in the Cloud Build upload; its presence stops the `.gitignore` fallback from stripping it.
+- `.gitignore` (update) — ignore `backend/weights/`.
+- `backend/.dockerignore` (update) — drop the stale `.weights/` line.
+- `backend/tests/test_predict.py` (update) — `resolve_weights` contract test + real-staged-weights integration test (skips if unstaged).
+- `backend/README.md` (update) — staged `weights/` prep step, HF-free deploy flow; the HF upload section is now "optional/published-artifact + fallback".
+- `context.md` (update) — this entry.
+**Decisions:** Bake from local files (fully HF-free) over build-time `hf download` (keeps a build-time HF dep + touches the ClamAV-flagged vocab) and over a GCS bucket (weights are stable → no need to decouple). `weights.py` unchanged — the existing `HERON_WEIGHTS_DIR` path is the loader; HF stays as a fallback + published artifact. Key gotcha handled: `gcloud run deploy --source` falls back to `.gitignore` (which ignores `weights/`) unless a `.gcloudignore` exists.
+**Open questions / follow-ups:** Prep step is manual before each deploy (documented in `backend/README.md`). Deploy + live "no `hf_hub_download`" verification is Task 4 of the plan (user-run). Cold start still pays image-pull + torch import + disk load (~5–10 s).
+
+### Task 3 — Backend LIVE on Google Cloud Run
+
+**What was done:** Deployed the FastAPI backend to Cloud Run and verified it end-to-end. Live at `https://heron-api-787333291568.us-central1.run.app`. `/predict` returns correct real verdicts — phishing sample → `phishing` (1.0) with 5 signals; legit sample → `legitimate` (0.9916); pasted urgent+bit.ly text → `phishing` (0.9999). Fixed a namespace bug + several deploy blockers along the way.
+**Files touched:**
+- `backend/app/weights.py` (update) — `HF_REPO_ID` corrected to `vishalpatil-18/heron-phishing` (the real HF namespace has a hyphen; the old `vishalpatil18` 404'd → `/predict` 500) and made overridable via `HERON_HF_REPO` env.
+- `backend/README.md`, `README.md`, `context.md` (update) — namespace `vishalpatil18` → `vishalpatil-18`; recorded the live URL.
+**Decisions / gotchas (for future deploys):**
+- HF namespace is **`vishalpatil-18`** (hyphen), not `vishalpatil18`.
+- Cloud Run "deploy from source" needs the Compute Engine default SA (`<projectnum>-compute@developer.gserviceaccount.com`) granted `roles/cloudbuild.builds.builder`; new projects don't, giving a `403 storage.objects.get` on the source bucket.
+- HF weights upload needs a **Write**-scoped token (`hf auth login`) under the correct namespace.
+- Cloud Run now issues **project-number URLs** (`heron-api-<projectnum>.<region>.run.app`), not the old random-hash form — the URL changed between the first and second deploy.
+- Cold start re-downloads the 136 MB weights (scale-to-zero), so the first `/predict` after idle can time out; the warm instance serves normally.
+**Open questions / follow-ups:** none for the backend. Frontend (Task 4+) consumes `NEXT_PUBLIC_API_URL`.
 
 ### Retarget backend deploy: HF Spaces → Google Cloud Run
 
@@ -126,8 +154,8 @@ pytest                                        # 8 tests, stubbed model - no real
 
 ## Open Questions / TODOs
 
-- [ ] Install prereqs on the dev machine: `git-lfs`, `hf` CLI, `gcloud` CLI (+ a GCP project with billing enabled).
+- [x] Install prereqs on the dev machine: `git-lfs`, `hf` CLI, `gcloud` CLI (+ a GCP project with billing enabled).
 - [x] One-time weights upload to the **free** HF model repo `vishalpatil-18/heron-phishing` (`git lfs pull` → `hf repos create --type model` → `hf upload … --type model`) — blocks the deployed backend serving.
-- [ ] Deploy backend to Cloud Run: `gcloud run deploy heron-api --source . --region us-central1 --allow-unauthenticated --memory 2Gi --max-instances 1 --timeout 300`; confirm `/health` + `/predict`.
-- [ ] Capture the Cloud Run URL → set as `NEXT_PUBLIC_API_URL` (Task 4/12); update root `README.md` live URL (Task 12).
+- [x] Deploy backend to Cloud Run — **live** at `https://heron-api-787333291568.us-central1.run.app`; `/health` + `/predict` verified.
+- [ ] Wire `NEXT_PUBLIC_API_URL` = `https://heron-api-787333291568.us-central1.run.app` into the frontend (Task 4/12); update root `README.md` live URL (Task 12).
 - [ ] (Optional) verify the image locally with Docker before deploy — not required (Cloud Build builds from source).

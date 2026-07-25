@@ -8,6 +8,7 @@ in backend/README.md.
 
 from pathlib import Path
 
+import pytest
 import torch
 from fastapi.testclient import TestClient
 
@@ -15,6 +16,7 @@ import app.main as main
 from app.model import build_signals, extract_metadata
 
 SAMPLES = Path(__file__).parent.parent / "samples"
+WEIGHTS_DIR = Path(__file__).parent.parent / "weights"
 STOI = {"<unk>": 1, "account": 2, "verify": 3, "newsletter": 4}
 
 client = TestClient(main.app)
@@ -112,3 +114,31 @@ def test_signals_match_script_thresholds():
 
     clean_meta = extract_metadata("Monthly newsletter", "Here are this month's reading recommendations.")
     assert build_signals(clean_meta.tolist()) == []
+
+
+def test_resolve_weights_uses_local_dir(monkeypatch):
+    """HERON_WEIGHTS_DIR drives weight resolution to local disk (the bake relies on this)."""
+    monkeypatch.setenv("HERON_WEIGHTS_DIR", "/tmp/heron-weights")
+    from app.weights import resolve_weights
+    weights_path, vocab_path = resolve_weights()
+    assert weights_path == "/tmp/heron-weights/best_fusion_model.pth"
+    assert vocab_path == "/tmp/heron-weights/vocab_text_1.json"
+
+
+@pytest.mark.skipif(
+    not (WEIGHTS_DIR / "best_fusion_model.pth").exists(),
+    reason="real weights not staged in backend/weights/ (run the prep step first)",
+)
+def test_real_staged_weights_load_and_predict():
+    """The real staged weights load off local disk and predict — the crux of the bake."""
+    from app.model import build_model, run_prediction
+    from app.emails import parse_html
+
+    model, stoi = build_model(
+        str(WEIGHTS_DIR / "best_fusion_model.pth"),
+        str(WEIGHTS_DIR / "vocab_text_1.json"),
+    )
+    parsed = parse_html((SAMPLES / "phishing_example.html").read_text())
+    result = run_prediction(model, stoi, parsed)
+    assert result["verdict"] == "phishing"
+    assert result["confidence"] > 0.5

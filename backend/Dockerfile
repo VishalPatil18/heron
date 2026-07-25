@@ -13,9 +13,13 @@ COPY requirements.txt .
 RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu \
  && pip install -r requirements.txt
 
-# Weights are NOT baked in — pulled from the HF model repo at startup and cached.
 COPY app ./app
 COPY samples ./samples
+
+# Bake the model weights into the image (staged in backend/weights/ before deploy).
+# HERON_WEIGHTS_DIR makes weights.py load them off local disk — no HF pull at runtime.
+COPY weights ./weights
+ENV HERON_WEIGHTS_DIR=/app/weights
 
 # Cloud Run injects $PORT (defaults to 8080); fall back to 8080 for local runs.
 # `exec` gives uvicorn PID 1 so it receives Cloud Run's SIGTERM on shutdown.

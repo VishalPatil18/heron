@@ -33,3 +33,6 @@ ENV/
 
 # Logs
 *.log
+
+# Baked-weights staging dir (source of truth stays in models/ + data/)
+backend/weights/
