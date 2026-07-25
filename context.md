@@ -35,7 +35,7 @@ Copy this block for each new session. **Newest entries go at the TOP of Session 
 - Samples in `backend/samples/`, tests in `backend/tests/test_predict.py`.
 - Containerized: `backend/Dockerfile` + `.dockerignore` (honors `$PORT`, default 8080); CPU torch, weights pulled at startup from the free HF model repo (not baked in). Deploys to **Google Cloud Run** via `gcloud run deploy --source` (Cloud Build — no local Docker needed).
 
-**Frontend:** not started. Planned: Next.js App Router + TS + Tailwind → Vercel.
+**Frontend:** scaffolded in `frontend/` — Next.js 16.2 (App Router, Turbopack) + React 19 + TypeScript + **Tailwind v4** (CSS-first `@theme`, no `tailwind.config`). DESIGN.md tokens live in `frontend/app/globals.css @theme`; DM Sans via `next/font`; light-mode only. Primitives in `frontend/components/ui/` (`Button`, `Card`, `Badge`); typed API client in `frontend/lib/api.ts`. `create-next-app` also dropped `frontend/CLAUDE.md`+`AGENTS.md` (Next-16 "read node_modules/next/dist/docs before coding" guidance — kept). Deploy target: Vercel (Task 12).
 
 **Existing ML code (do not modify):** `src/`, `inference/`, `notebooks/`, `models/`, `data/`.
 
@@ -69,7 +69,20 @@ pytest                                        # 8 tests, stubbed model - no real
 
 ## Session History
 
-### Bake model weights into the image (HF-free serving)
+### Task 4 — Frontend scaffold + DESIGN.md design system
+
+**What was done:** Scaffolded the Next.js frontend (`create-next-app`: Next 16.2, React 19, TS, Tailwind v4, App Router) and wired the DESIGN.md token system. `npm run build` passes; dev-server screenshot + DOM confirm the primitives render (DM Sans, 80px hero, coral pill badge, black pill buttons, 16px/32px cards). Backend also re-verified live + HF-free (`hf_hub_download` log lines: 0).
+**Files touched:**
+- `frontend/` (create) — `create-next-app` scaffold (Next 16.2 / React 19 / Tailwind v4 CSS-first).
+- `frontend/app/globals.css` (update) — `@theme` with DESIGN.md colors, radius (`xl`16/`hero`32/…), and DM Sans type scale (`text-hero-display`, `text-display-lg`, … as Tailwind v4 `--text-*` utilities); light-only; body = canvas/ink.
+- `frontend/app/layout.tsx` (update) — DM Sans via `next/font/google`, Heron `<title>`/OG metadata.
+- `frontend/lib/api.ts` (create) — typed `predict()` + `PredictResponse`/`Signal`/`Verdict`; `NEXT_PUBLIC_API_URL` (dev `http://localhost:8000`, prod the Cloud Run URL).
+- `frontend/components/ui/{Button,Card,Badge}.tsx` (create) — primitives per DESIGN.md (pill buttons w/ `:active` pressed, no-hover policy; card-base vs coral hero; success/new/beta badges).
+- `frontend/app/page.tsx` (update) — scratch page exercising all primitives + the type scale.
+- `.claude/launch.json` (create) — `heron-frontend` dev-server config (port 3000).
+- `context.md` (update) — Current State + this entry.
+**Decisions:** Tailwind **v4** (create-next-app default) → tokens in `globals.css @theme`, not the plan's `tailwind.config.ts`. Spacing uses Tailwind's numeric scale (already equals DESIGN.md px: p-6=24, p-8=32). `NEXT_PUBLIC_API_URL` prod = the live Cloud Run URL (plan's HF Space is dead). Heeded `frontend/AGENTS.md` (Next 16 breaking changes) — read `node_modules/next/dist/docs` for `next/font` + CSS conventions before coding.
+**Open questions / follow-ups:** Real pages (nav/footer/landing/dashboard) are Tasks 5–11; `predict()` is defined but not yet called (Task 8). `frontend/node_modules` is npm-ignored via the scaffold's own `.gitignore`.
 
 **What was done:** Removed the runtime Hugging Face dependency and the ~136 MB cold-start download by baking the weights into the Cloud Run image. Weights are staged into a gitignored `backend/weights/` folder and `COPY`ed in; `HERON_WEIGHTS_DIR=/app/weights` makes `weights.py` load them off local disk. Spec: `docs/superpowers/specs/2026-07-24-bake-model-weights-into-image-design.md`; plan: `docs/superpowers/plans/2026-07-24-bake-model-weights-into-image.md`. 10 pytest green (incl. a real-staged-weights integration test that loads the 136 MB model and predicts `phishing`).
 **Files touched:**
