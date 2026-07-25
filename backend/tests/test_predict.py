@@ -130,7 +130,7 @@ def test_resolve_weights_uses_local_dir(monkeypatch):
     reason="real weights not staged in backend/weights/ (run the prep step first)",
 )
 def test_real_staged_weights_load_and_predict():
-    """The real staged weights load off local disk and predict — the crux of the bake."""
+    """The real staged weights load off local disk and predict - the crux of the bake."""
     from app.model import build_model, run_prediction
     from app.emails import parse_html
 

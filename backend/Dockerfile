@@ -1,4 +1,4 @@
-# Heron API — FastAPI phishing inference, for Google Cloud Run (honors $PORT).
+# Heron API - FastAPI phishing inference, for Google Cloud Run (honors $PORT).
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
@@ -17,7 +17,7 @@ COPY app ./app
 COPY samples ./samples
 
 # Bake the model weights into the image (staged in backend/weights/ before deploy).
-# HERON_WEIGHTS_DIR makes weights.py load them off local disk — no HF pull at runtime.
+# HERON_WEIGHTS_DIR makes weights.py load them off local disk - no HF pull at runtime.
 COPY weights ./weights
 ENV HERON_WEIGHTS_DIR=/app/weights
 

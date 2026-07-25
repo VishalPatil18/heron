@@ -10,7 +10,8 @@ export default function StyleGuide() {
         <Badge variant="new">DESIGN SYSTEM</Badge>
         <h1 className="text-hero-display">Nothing swims past.</h1>
         <p className="text-subtitle text-steel max-w-xl">
-          Heron design-system primitives, wired straight from the DESIGN.md tokens.
+          Heron design-system primitives, wired straight from the DESIGN.md
+          tokens.
         </p>
       </section>
 
@@ -22,7 +23,9 @@ export default function StyleGuide() {
         <p className="text-heading-sm">Heading 24</p>
         <p className="text-card-title">Card title 20</p>
         <p className="text-subtitle text-steel">Subtitle 18</p>
-        <p className="text-body-md">Body 16 — the quick brown fox jumps over the lazy dog.</p>
+        <p className="text-body-md">
+          Body 16 - the quick brown fox jumps over the lazy dog.
+        </p>
         <p className="text-body-sm text-steel">Body small 14</p>
         <p className="text-caption text-stone">Caption 13</p>
       </section>
@@ -60,7 +63,7 @@ export default function StyleGuide() {
           <Card variant="hero">
             <h3 className="text-card-title">Nothing swims past.</h3>
             <p className="text-body-sm mt-2 opacity-90">
-              32px gradient card — the coral product moment.
+              32px gradient card - the coral product moment.
             </p>
           </Card>
         </div>

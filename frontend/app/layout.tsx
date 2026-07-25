@@ -8,11 +8,11 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Heron — Nothing swims past.",
+  title: "Heron - Nothing swims past.",
   description:
     "Heron catches AI-supercharged phishing before you click. Scan any email and get an instant verdict.",
   openGraph: {
-    title: "Heron — Nothing swims past.",
+    title: "Heron - Nothing swims past.",
     description: "Heron catches AI-supercharged phishing before you click.",
     type: "website",
   },

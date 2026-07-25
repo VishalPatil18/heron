@@ -55,7 +55,8 @@ export function Footer() {
           </div>
         </div>
         <p className="text-micro text-muted mt-12">
-          © {new Date().getFullYear()} Heron — a multimodal phishing-detection demo.
+          © {new Date().getFullYear()} Heron - a multimodal phishing-detection
+          demo.
         </p>
       </div>
     </footer>

@@ -14,7 +14,7 @@ Stage the weights into `backend/weights/` (the same folder the deploy bakes in),
 then point the app at it:
 
 ```bash
-# from the repo root — `git lfs pull` once to fetch the real .pth (not the LFS stubs)
+# from the repo root - `git lfs pull` once to fetch the real .pth (not the LFS stubs)
 mkdir -p backend/weights
 cp models/best_fusion_model.pth data/vocab_text_1.json backend/weights/
 ```
@@ -69,7 +69,7 @@ Tests use a stubbed model, so they pass without real weights.
 ## Optional: publish weights to the HF model repo
 
 The deployed backend uses weights **baked into the image** (see Deploy below), so
-this is optional — it only keeps `vishalpatil-18/heron-phishing` as a published
+this is optional - it only keeps `vishalpatil-18/heron-phishing` as a published
 artifact and the fallback used when `HERON_WEIGHTS_DIR` is unset. Requires `git-lfs`
 and the `hf` CLI (`brew install git-lfs`; `curl -LsSf https://hf.co/cli/install.sh | bash -s`):
 
@@ -103,9 +103,9 @@ curl -F file=@samples/phishing_example.html localhost:8080/predict
 
 Free tier, scales to zero. HF Docker Spaces now require a paid PRO plan, so the
 backend runs on Cloud Run instead. The weights are **baked into the image** from
-`backend/weights/` — no Hugging Face pull at build or runtime.
+`backend/weights/` - no Hugging Face pull at build or runtime.
 
-> **Live:** https://heron-api-787333291568.us-central1.run.app — `GET /health`, `POST /predict`.
+> **Live:** https://heron-api-787333291568.us-central1.run.app - `GET /health`, `POST /predict`.
 
 **Prerequisites (one-time):** install the `gcloud` CLI, then a GCP project with
 billing enabled and the required APIs on:
@@ -116,7 +116,7 @@ gcloud config set project YOUR_PROJECT_ID
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com
 ```
 
-**Stage the weights (required before every deploy)** — they get baked into the image:
+**Stage the weights (required before every deploy)** - they get baked into the image:
 
 ```bash
 # from the repo root
@@ -125,7 +125,7 @@ mkdir -p backend/weights
 cp models/best_fusion_model.pth data/vocab_text_1.json backend/weights/
 ```
 
-**Deploy from source** — Cloud Build builds the `Dockerfile` in the cloud, so no
+**Deploy from source** - Cloud Build builds the `Dockerfile` in the cloud, so no
 local Docker is needed:
 
 ```bash
@@ -140,11 +140,11 @@ gcloud run deploy heron-api \
   --timeout 300
 ```
 
-- `--memory 2Gi` — torch + the model exceed the 512Mi default; the download cache
+- `--memory 2Gi` - torch + the model exceed the 512Mi default; the download cache
   lives in Cloud Run's in-memory filesystem, so size for it.
-- `--max-instances 1` — bounds cost; with scale-to-zero (the default min of 0),
+- `--max-instances 1` - bounds cost; with scale-to-zero (the default min of 0),
   idle cost is **$0**.
-- `--allow-unauthenticated` — public demo endpoint. CORS is already `*`.
+- `--allow-unauthenticated` - public demo endpoint. CORS is already `*`.
 
 **Capture the URL** (it contains a random hash, e.g. `https://heron-api-abc123-uc.a.run.app`)
 and use it as `NEXT_PUBLIC_API_URL` for the frontend:
@@ -157,4 +157,3 @@ curl "$(gcloud run services describe heron-api --region us-central1 --format 'va
 > Cold starts no longer download weights (they're baked into the image); the first
 > request after idle still pays image-pull + torch import + loading the model off
 > disk (~5–10 s). Eliminating cold starts entirely needs paid `min-instances=1`.
-

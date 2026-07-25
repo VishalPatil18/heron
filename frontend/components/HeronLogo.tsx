@@ -1,4 +1,4 @@
-// Heron in flight — arched wings with the head between them and legs trailing.
+// Heron in flight - arched wings with the head between them and legs trailing.
 // Mono, uses currentColor so the parent sets the color (ink on nav, white on footer).
 
 interface HeronLogoProps {
