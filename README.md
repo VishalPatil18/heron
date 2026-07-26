@@ -1,18 +1,32 @@
-# Heron
+<p align="center">
+  <img src="./frontend/app/icon.png" alt="heron logo" width="80" height="80">
+</p>
 
-> **"Nothing swims past."**
+<h1 align="center">Heron</h1>
 
-Heron is a multimodal phishing detector with a product face: a **FastAPI inference
-service** and a **web app** wrapped around a dual-tower fusion model that jointly
-analyzes **email text**, **embedded brand logos**, and **engineered metadata** -
-achieving **99.45% accuracy** and **AUC 0.999** on a balanced dataset of 76,346 emails.
+<p align="center">
+  <strong>Nothing swims past.</strong><br>
+  Heron is the watcher on the water that catches the phish before you click. 
+</p>
 
-AI has made phishing cheaper, faster, and more convincing. Heron is the watcher on
-the water that catches the phish before you click.
+<p align="center">
+  <a href="https://heron.v-ai.org"><strong>Website</strong></a> ·
+  <a href="https://huggingface.co/vishalpatil-18/heron-phishing"><strong>Model</strong></a>
+</p>
 
-[![Live Demo](https://img.shields.io/badge/🤗%20Research%20Demo-Hugging%20Face%20Spaces-blue)](https://huggingface.co/spaces/anilawork/phish-detection-ui-final)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c)](https://pytorch.org/)
+<p align="center">
+  <img src="https://img.shields.io/badge/Hugging%20Face-000000?logo=huggingface&logoColor=yellow" alt="Hugging Face">
+  <img src="https://img.shields.io/badge/Python-3.10%2B-blue" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c" alt="PyTorch 2.0+">
+  <img src="https://img.shields.io/badge/Next.js-14-000000?logo=nextdotjs&logoColor=white" alt="Next.js 14">
+  <img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.6">
+  <img src="https://img.shields.io/badge/FastAPI-0.95-0093AA?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License">
+</p>
+
+---
+
+Heron is a multimodal phishing detector with a product face: a **FastAPI inference service** and a **web app** wrapped around a dual-tower fusion model that jointly analyzes **email text**, **embedded brand logos**, and **engineered metadata** - achieving **99.45% accuracy** and **AUC 0.999** on a balanced dataset of 76,346 emails.
 
 ---
 
@@ -50,40 +64,11 @@ The three towers are pre-trained independently as specialists, then fused in a j
 
 ## Architecture
 
-```
-                    ┌─────────────────────────────────────────────────────┐
-                    │                  EMAIL INPUT                        │
-                    └──────────┬────────────────┬──────────────┬──────────┘
-                               │                │              │
-                    ┌──────────▼──────┐  ┌──────▼──────┐  ┌───▼────────────┐
-                    │   TEXT TOWER    │  │ IMAGE TOWER │  │ METADATA MLP   │
-                    │  (Custom CNN)   │  │ (Custom CNN)│  │  (20-dim feat) │
-                    │                 │  │             │  │                │
-                    │  Embed(128)     │  │ Conv 3→64   │  │  Linear(20,64) │
-                    │  Conv1D ×4      │  │ Conv 64→128 │  │  ReLU          │
-                    │  GlobalAvgPool  │  │ Conv128→256 │  │                │
-                    │  Linear→256     │  │ Conv256→512 │  └───────┬────────┘
-                    └──────────┬──────┘  │ AvgPool→512 │          │
-                               │         └──────┬──────┘          │
-                               │  256-d         │  512-d          │  64-d
-                               └────────────────┴──────────────────┘
-                                                │
-                                         Concat (832-d)
-                                                │
-                                    ┌───────────▼───────────┐
-                                    │    FUSION CLASSIFIER   │
-                                    │  Linear(832→512) + BN  │
-                                    │  Linear(512→256) + BN  │
-                                    │  Linear(256→128) + BN  │
-                                    │  Linear(128→2)         │
-                                    └───────────┬────────────┘
-                                                │
-                                    ┌───────────▼────────────┐
-                                    │  Phishing / Legitimate  │
-                                    └────────────────────────┘
-```
+<img src="./docs/architecture.png" alt="architecture" width="auto" height="auto">
 
-**Training strategy:**
+<br />
+
+## Training strategy
 
 1. **Phase 1** - Text and image towers are trained independently as specialist classifiers.
 2. **Phase 2** - Email and logo datasets are aligned into a unified multimodal dataset.
@@ -332,17 +317,6 @@ Detected Issues:
   Excessive capitalization (34.2%)
 ==================================
 ```
-
----
-
-## Live Demo
-
-A Streamlit research demo is deployed on Hugging Face Spaces - no installation required:
-
-**[https://huggingface.co/spaces/anilawork/phish-detection-ui-final](https://huggingface.co/spaces/anilawork/phish-detection-ui-final)**
-
-Upload any `.html` email file to receive an instant phishing verdict with confidence
-score and suspicious signal breakdown.
 
 ---
 
