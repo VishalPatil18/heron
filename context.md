@@ -69,6 +69,17 @@ pytest                                        # 8 tests, stubbed model - no real
 
 ## Session History
 
+### Task 10 - Benchmarks page (model table + metric bars)
+
+**What was done:** Built `/benchmarks`: a model-comparison table (KNN 81.71, LogReg 80.00, Text CNN 98.96, Image CNN 76.30, ResNet18 97.43, Fusion 99.45 highlighted) and the fusion model's detailed metrics (Accuracy 99.45%, AUC-ROC 0.999, Precision 99.5%, Recall 99.4%, F1 99.4%) as animated bars. All numbers live in one typed source and match README exactly. Verified table values against README; tsc + eslint clean.
+**Files touched:**
+- `frontend/lib/benchmarks.ts` (create) - typed `models` + `fusionMetrics` single source (README/paper numbers)
+- `frontend/components/benchmarks/ModelTable.tsx` (create, server) - data-table styled comparison table; Fusion row emphasized (bold + coral tint); slim static accuracy fill-bar per row (hidden < sm); outer `overflow-hidden rounded-md` clips corners, inner `overflow-x-auto` scrolls on mobile
+- `frontend/components/benchmarks/MetricBars.tsx` (create, client) - 5 horizontal bars, each fill animates 0→value on `whileInView` (StatsStrip pattern), `useReducedMotion` snaps to value
+- `frontend/app/(marketing)/benchmarks/page.tsx` (replace stub, server) - intro + "Model comparison" (ModelTable) + "Fusion model metrics" (MetricBars) sections
+**Decisions:** Numbers use README's reported values (AUC 0.999, P 99.5 / R 99.4 / F1 99.4), not confusion-matrix-recomputed ones, since the test scenario is "table matches README exactly". Honest 0-100 bar scale (metrics all near 100% look similar by design; the value readouts carry precision). Table is a server component (static); only the animated bars are client.
+**Open questions / follow-ups:** none. `whileInView` bar fill can't be visually verified in the headless 0×0 preview (IntersectionObserver never fires) - plays in a real browser; final values/structure verified via DOM.
+
 ### Task 9 follow-up - pin-on-click, clear button, no focus outline
 
 **What was done:** Refined `ArchitectureDiagram` interaction: hover still previews a block, but a click now **pins** it (panel persists with no hover, until another block is picked). Added a red (coral) × clear button in the panel's top-right (20px insets, via `p-5` + `absolute top-5 right-5`) that resets to the placeholder. Removed the browser's blue focus outline on the SVG node groups. Verified: pin persists without hover, × clears to placeholder, `outlineStyle: none`; tsc + eslint clean.
