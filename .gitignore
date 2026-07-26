@@ -28,8 +28,7 @@ ENV/
 .claude/
 
 # Env / secrets
-.env
-.env.*
+.env.local
 
 # Logs
 *.log
