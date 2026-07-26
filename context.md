@@ -69,6 +69,20 @@ pytest                                        # 8 tests, stubbed model - no real
 
 ## Session History
 
+### Task 8 - Dashboard email scanner (live inference)
+
+**What was done:** Built the core product: `/dashboard` scans an email (drag-drop `.html`/`.eml`, paste text, or one-click sample) against the **live Cloud Run backend** and shows a verdict, animated confidence ring, and detected signals. Status machine `idle → scanning → done/error` with an `AbortController` guarding double-submit and navigate-away. Verified end-to-end: phishing sample → Phishing 100% + 5 signals; legit sample → Legitimate 99% + no signals; simulated backend-down → error + Retry → recovery. `tsc` + eslint clean.
+**Files touched:**
+- `frontend/app/dashboard/page.tsx` (update) - replaced the stub with a client orchestrator: state machine, abort guard, `friendlyError()` mapping (network vs 400 vs generic), last-input Retry, minimal inline header (logo→home) + footer (Team link, R7)
+- `frontend/components/dashboard/UploadZone.tsx` (create) - tabs (Upload file / Paste text), drag-drop + hidden file picker (`.html,.eml`, resets value so same file re-selects), subject+textarea, "Try a sample" buttons that fetch bundled samples → `File`
+- `frontend/components/dashboard/ScanProgress.tsx` (create) - cosmetic timed stage loader (Parsing → Reading text → Inspecting logos → Fusing signals) + skeleton
+- `frontend/components/dashboard/ResultCard.tsx` (create) - verdict pill (coral/green), framer-animated SVG confidence ring + count-up %, signals list with severity chips (high=coral / medium / low), meta line, "Scan another"
+- `frontend/components/dashboard/EmptyState.tsx` (create) - idle placeholder
+- `frontend/public/samples/{phishing,legit}_example.html` (create) - copies of `backend/samples/*` for same-origin sample fetch (no CORS)
+- `frontend/.env.local` (create) - `NEXT_PUBLIC_API_URL` = live Cloud Run URL so dev/preview hit the real backend (gitignored)
+**Decisions:** `lib/api.ts` left unchanged - its `predict()` (abort support) and `PredictResponse` already match the backend contract exactly. Dashboard sits outside the `(marketing)` layout, so it carries its own minimal header/footer inline (no new files). Loader stages are cosmetic (backend is one request), revealed on resolve. Samples fetched as `File` (not inline text) to exercise the real `.html` upload path and produce rich signals. `confidence` is 0-1 → ×100 for display.
+**Open questions / follow-ups:** none. Backend cold start adds ~12s to the first scan (Cloud Run scale-to-zero); warm scans ~1.8s. Mobile (375px) relies on `lg:grid-cols-2` stacking - verified by construction, not visually (preview pane is headless 0×0).
+
 ### Animate hero chip dot + stats count-up
 
 **What was done:** Made the coral status dot in the Hero "Phishing defense · live" chip pulse (CSS `animate-ping` ring behind a solid dot — no JS). Added a framer-driven count-up to StatsStrip: each stat animates from 0 to its value on scroll-into-view (easeOut, 1.6s), formatted with `toLocaleString` so it lands exactly on the originals (`99.45%`, `0.999`, `76,346`, `352`) and groups mid-animation. Installed `motion` (framer-motion, v12).
