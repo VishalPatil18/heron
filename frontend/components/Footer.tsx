@@ -14,7 +14,8 @@ const columns = [
     title: "Developers",
     links: [
       { label: "Team", href: "/team" },
-      { label: "Hire Me", href: "/hire-me" },
+      { label: "Hire Vishal", href: "mailto:hire.vishalpatil@gmail.com" },
+      { label: "VAi", href: "https://v-ai.org/" },
     ],
   },
 ];
@@ -37,7 +38,7 @@ export function Footer() {
             </a>
             <br />
             <a
-              href="https://github.com/VishalPatil18/heron"
+              href="https://huggingface.co/vishalpatil-18/heron-phishing"
               target="_blank"
               rel="noopener noreferrer"
               className="text-body-sm text-muted inline-block"

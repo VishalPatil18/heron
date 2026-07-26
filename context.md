@@ -69,6 +69,25 @@ pytest                                        # 8 tests, stubbed model - no real
 
 ## Session History
 
+### Task 11 follow-up - Vishal hero redesign + fix profile images
+
+**What was done:** Rebuilt Vishal's card on `/team` as a personal hero: "Open to work · US & Europe" chip, "Hi, I'm Vishal Patil", "I build AI products people actually use.", a Heron-aligned bio (dropped ProBot per request) with links to v-ai.org/build + the CNBC article, a "What I bring to the table" skills card, and an amber "As featured by CNBC" callout. Fixed all profile image paths to root-relative (`/vishal.jpeg`, `/akash.jpeg`, `/sri.jpeg`, `/anila.png` in `public/`) and fixed the team-grid LinkedIn buttons (were pointing at `github` instead of `linkedin`). Verified all 4 images load and links resolve; tsc clean.
+**Files touched:**
+- `frontend/app/(marketing)/team/page.tsx` (update) - Vishal hero redesign; `skills` array; CNBC/VAI url consts; root-relative image src; LinkedIn href fix; removed unused `initials()` (avatars are photos now)
+**Decisions:** CNBC callout uses amber Tailwind utilities (`bg-amber-50` etc.) - no warm token in the design system, but matches the requested look. Kept plain `<img>` (LCP lint warning accepted) to match existing code. `products` and `VAi` both link to https://v-ai.org/build per request.
+**Open questions / follow-ups:** none.
+
+### Task 11 - Research page + Team/hire page
+
+**What was done:** Built `/research` (the paper, typeset in a ≤760px prose column with a Download-PDF button) and `/team` (hire page led by Vishal, grid of the other three with GitHub links). Copied `docs/Project_Report.pdf` → `frontend/public/heron-research.pdf` (serves 200 `application/pdf`). Fixed the footer's dead `/hire-me` link → `/team`. Verified: research sections + PDF download, team leads with Vishal + all 4 GitHub links, both footers link `/team`; tsc + eslint clean.
+**Files touched:**
+- `frontend/public/heron-research.pdf` (create) - copy of the paper, served for download
+- `frontend/app/(marketing)/research/page.tsx` (replace stub, server) - eyebrow/title/authors + Download-PDF `<a download>`; Abstract, Key contributions (3), Method, Results (links to /benchmarks), Data, References [1]–[5], transcribed from the paper
+- `frontend/app/(marketing)/team/page.tsx` (replace stub, server) - Vishal hero (initials avatar, role/bio TODO placeholders, mailto "Hire me" → vishalpatil.imp@gmail.com, GitHub) + 3-card grid (Akash `akashsv01`, Srihari `Srihari-Narayan`, Anila `madhu-anila`); `initials()` helper for avatars
+- `frontend/components/Footer.tsx` (update) - "Hire Me" href `/hire-me` → `/team` (the team page is the hire page)
+**Decisions:** Placeholders marked with `{/* TODO */}` (Vishal photo/bio/role, teammate roles) so the page ships now. Used Vishal's known email for the mailto as a sensible default (TODO to swap). PDF/mailto/GitHub use plain `<a>` (download/external semantics) rather than the Button component (which renders next/link). Team GitHub handles from README: VishalPatil18, akashsv01, Srihari-Narayan, madhu-anila.
+**Open questions / follow-ups:** none. Remaining: Task 12 (Vercel deploy). Nav already links /research and /team.
+
 ### Task 10 - Benchmarks page (model table + metric bars)
 
 **What was done:** Built `/benchmarks`: a model-comparison table (KNN 81.71, LogReg 80.00, Text CNN 98.96, Image CNN 76.30, ResNet18 97.43, Fusion 99.45 highlighted) and the fusion model's detailed metrics (Accuracy 99.45%, AUC-ROC 0.999, Precision 99.5%, Recall 99.4%, F1 99.4%) as animated bars. All numbers live in one typed source and match README exactly. Verified table values against README; tsc + eslint clean.

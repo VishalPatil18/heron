@@ -69,7 +69,7 @@ const modelDecisions = [
 export default function ArchitecturePage() {
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-16 lg:py-24">
-      <div className="max-w-[760px]">
+      <div className="max-w-4xl">
         <span className="text-caption font-semibold uppercase tracking-[0.08em] text-brand-coral">
           Architecture
         </span>
@@ -84,7 +84,7 @@ export default function ArchitecturePage() {
         </p>
       </div>
 
-      <div className="mt-12 max-w-[760px] space-y-10">
+      <div className="mt-12 max-w-4xl space-y-10">
         <section>
           <h2 className="text-heading-sm text-ink">The application</h2>
           <p className="text-body-md text-charcoal mt-3 text-justify">
@@ -143,7 +143,7 @@ export default function ArchitecturePage() {
         </div>
       </section>
 
-      <section className="mt-16 max-w-[760px]">
+      <section className="mt-16 max-w-4xl">
         <h2 className="text-heading-sm text-ink">The complete workflow</h2>
         <ol className="mt-6 space-y-5">
           {workflow.map((w) => (

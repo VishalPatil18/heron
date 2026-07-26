@@ -3,8 +3,8 @@ import { MetricBars } from "@/components/benchmarks/MetricBars";
 
 export default function BenchmarksPage() {
   return (
-    <div className="mx-auto max-w-[1280px] px-6 py-16 lg:py-24">
-      <div className="max-w-[760px]">
+    <div className="mx-auto max-w-4xl px-6 py-16 lg:py-24">
+      <div className="max-w-4xl">
         <span className="text-caption font-semibold uppercase tracking-[0.08em] text-brand-coral">
           Benchmarks
         </span>
@@ -19,7 +19,7 @@ export default function BenchmarksPage() {
         </p>
       </div>
 
-      <section className="mt-14 max-w-[820px]">
+      <section className="mt-14 max-w-4xl">
         <h2 className="text-heading-sm text-ink">Model comparison</h2>
         <p className="text-body-sm text-steel mt-2 text-justify">
           Traditional baselines (KNN, Logistic Regression) against the custom
@@ -31,7 +31,7 @@ export default function BenchmarksPage() {
         </div>
       </section>
 
-      <section className="mt-16 max-w-[620px]">
+      <section className="mt-16 max-w-4xl">
         <h2 className="text-heading-sm text-ink">Fusion model metrics</h2>
         <p className="text-body-sm text-steel mt-2 text-justify">
           Precision, recall and F1 are reported on the phishing class, the
