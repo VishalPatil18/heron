@@ -69,10 +69,30 @@ pytest                                        # 8 tests, stubbed model - no real
 
 ## Session History
 
+### Task 9 follow-up - pin-on-click, clear button, no focus outline
+
+**What was done:** Refined `ArchitectureDiagram` interaction: hover still previews a block, but a click now **pins** it (panel persists with no hover, until another block is picked). Added a red (coral) × clear button in the panel's top-right (20px insets, via `p-5` + `absolute top-5 right-5`) that resets to the placeholder. Removed the browser's blue focus outline on the SVG node groups. Verified: pin persists without hover, × clears to placeholder, `outlineStyle: none`; tsc + eslint clean.
+**Files touched:**
+
+- `frontend/components/ArchitectureDiagram.tsx` (update) - split `active` into `hovered`/`pinned` (`active = hovered ?? pinned`); click sets `pinned`, hover/focus set `hovered`; added the × button; `outline-none` + inline `outline:'none'` on node groups (focus is still indicated by the accent highlight via `onFocus`)
+  **Decisions:** `hovered ?? pinned` keeps hover as a transient preview layered over a persistent pin - matches "persist until another block is hovered or clicked". Kept focus outline removed but retained onFocus highlight, so keyboard focus stays visible without the blue ring.
+  **Open questions / follow-ups:** none
+
+### Task 9 - Architecture page (interactive diagram + writeups)
+
+**What was done:** Built `/architecture`: a framer-animated, interactive SVG diagram of the dual-tower fusion pipeline (Email → Text/Image/Metadata towers → Concat 832-d → Fusion 832→512→256→128→2 → Verdict), wrapped in writeups (the application, the model) above and the complete HTML-to-decision workflow + key design/model decisions below. Hovering/tapping a block highlights it (solid 3px), dashes its connected blocks, dims the rest, lights its connectors, and drives a description panel. Content transcribed from `docs/Project_Report.pdf`; exact layer dims from `src/fusion_models.py`. Verified: 7 nodes, correct highlight/dash/dim states + panel chips on interaction; tsc + eslint clean.
+**Files touched:**
+
+- `frontend/components/ArchitectureDiagram.tsx` (create, client) - node/edge graph as data; edge paths computed from block anchors; framer `whileInView` staggered entrance + connector `pathLength` draw-on + `whileHover` scale; `useState` active-node drives highlight (active/connected/dim) and the description panel. Responsive via fixed `viewBox` + `min-w-[900px]` inside `overflow-x-auto` (horizontal scroll on mobile)
+- `frontend/app/(marketing)/architecture/page.tsx` (replace stub, server) - intro + "The application" / "The model" prose (with 99.45% / AUC 0.9998 / 23-32 FP-FN callout), the diagram, a 5-step workflow `<ol>`, and Key design decisions + Model decisions as 2-col card grids
+  **Decisions:** Diagram as one responsive SVG with a fixed viewBox (not per-block measured connectors) - scales cleanly and the edge paths are computed from anchors. Entrance uses `whileInView` (matches StatsStrip's scroll-trigger pattern); hover highlight is state-driven with CSS transitions, not framer variants, so sibling nodes cross-animate simply. Prose lives in `page.tsx` (server); only the interactive diagram is a client component.
+  **Open questions / follow-ups:** none. `whileInView` entrance can't be visually verified in the headless 0×0 preview (IntersectionObserver never fires) - plays in a real browser; interactivity verified via dispatched click (same `setActive` path as hover).
+
 ### Task 8 - Dashboard email scanner (live inference)
 
 **What was done:** Built the core product: `/dashboard` scans an email (drag-drop `.html`/`.eml`, paste text, or one-click sample) against the **live Cloud Run backend** and shows a verdict, animated confidence ring, and detected signals. Status machine `idle → scanning → done/error` with an `AbortController` guarding double-submit and navigate-away. Verified end-to-end: phishing sample → Phishing 100% + 5 signals; legit sample → Legitimate 99% + no signals; simulated backend-down → error + Retry → recovery. `tsc` + eslint clean.
 **Files touched:**
+
 - `frontend/app/dashboard/page.tsx` (update) - replaced the stub with a client orchestrator: state machine, abort guard, `friendlyError()` mapping (network vs 400 vs generic), last-input Retry, minimal inline header (logo→home) + footer (Team link, R7)
 - `frontend/components/dashboard/UploadZone.tsx` (create) - tabs (Upload file / Paste text), drag-drop + hidden file picker (`.html,.eml`, resets value so same file re-selects), subject+textarea, "Try a sample" buttons that fetch bundled samples → `File`
 - `frontend/components/dashboard/ScanProgress.tsx` (create) - cosmetic timed stage loader (Parsing → Reading text → Inspecting logos → Fusing signals) + skeleton
@@ -80,47 +100,51 @@ pytest                                        # 8 tests, stubbed model - no real
 - `frontend/components/dashboard/EmptyState.tsx` (create) - idle placeholder
 - `frontend/public/samples/{phishing,legit}_example.html` (create) - copies of `backend/samples/*` for same-origin sample fetch (no CORS)
 - `frontend/.env.local` (create) - `NEXT_PUBLIC_API_URL` = live Cloud Run URL so dev/preview hit the real backend (gitignored)
-**Decisions:** `lib/api.ts` left unchanged - its `predict()` (abort support) and `PredictResponse` already match the backend contract exactly. Dashboard sits outside the `(marketing)` layout, so it carries its own minimal header/footer inline (no new files). Loader stages are cosmetic (backend is one request), revealed on resolve. Samples fetched as `File` (not inline text) to exercise the real `.html` upload path and produce rich signals. `confidence` is 0-1 → ×100 for display.
-**Open questions / follow-ups:** none. Backend cold start adds ~12s to the first scan (Cloud Run scale-to-zero); warm scans ~1.8s. Mobile (375px) relies on `lg:grid-cols-2` stacking - verified by construction, not visually (preview pane is headless 0×0).
+  **Decisions:** `lib/api.ts` left unchanged - its `predict()` (abort support) and `PredictResponse` already match the backend contract exactly. Dashboard sits outside the `(marketing)` layout, so it carries its own minimal header/footer inline (no new files). Loader stages are cosmetic (backend is one request), revealed on resolve. Samples fetched as `File` (not inline text) to exercise the real `.html` upload path and produce rich signals. `confidence` is 0-1 → ×100 for display.
+  **Open questions / follow-ups:** none. Backend cold start adds ~12s to the first scan (Cloud Run scale-to-zero); warm scans ~1.8s. Mobile (375px) relies on `lg:grid-cols-2` stacking - verified by construction, not visually (preview pane is headless 0×0).
 
 ### Animate hero chip dot + stats count-up
 
-**What was done:** Made the coral status dot in the Hero "Phishing defense · live" chip pulse (CSS `animate-ping` ring behind a solid dot — no JS). Added a framer-driven count-up to StatsStrip: each stat animates from 0 to its value on scroll-into-view (easeOut, 1.6s), formatted with `toLocaleString` so it lands exactly on the originals (`99.45%`, `0.999`, `76,346`, `352`) and groups mid-animation. Installed `motion` (framer-motion, v12).
+**What was done:** Made the coral status dot in the Hero "Phishing defense · live" chip pulse (CSS `animate-ping` ring behind a solid dot - no JS). Added a framer-driven count-up to StatsStrip: each stat animates from 0 to its value on scroll-into-view (easeOut, 1.6s), formatted with `toLocaleString` so it lands exactly on the originals (`99.45%`, `0.999`, `76,346`, `352`) and groups mid-animation. Installed `motion` (framer-motion, v12).
 **Files touched:**
+
 - `frontend/package.json` (update) - added `motion` dependency (explicitly requested; free/OSS, React 19 compatible)
 - `frontend/app/(marketing)/sections/Hero.tsx` (update) - status dot now a relative span with an `animate-ping` coral ring
 - `frontend/app/(marketing)/sections/StatsStrip.tsx` (update) - now a client component; stat data holds `{value:number, decimals, suffix}`; `Counter` uses `useMotionValue`/`animate`/`useTransform`/`useInView` (once), with `useReducedMotion` snapping straight to the value
-**Decisions:** Dot pulse in pure CSS (`animate-ping`), not framer → native platform covers it. Count-up via framer per explicit request. Numeric stat data + `toLocaleString` (not hardcoded strings) so the animated value formats identically to the target.
-**Open questions / follow-ups:** Count-up scroll trigger couldn't be visually verified in the preview pane (headless viewport is 0×0, so IntersectionObserver never fires); formatting verified via Node, pulse verified in DOM.
+  **Decisions:** Dot pulse in pure CSS (`animate-ping`), not framer → native platform covers it. Count-up via framer per explicit request. Numeric stat data + `toLocaleString` (not hardcoded strings) so the animated value formats identically to the target.
+  **Open questions / follow-ups:** Count-up scroll trigger couldn't be visually verified in the preview pane (headless viewport is 0×0, so IntersectionObserver never fires); formatting verified via Node, pulse verified in DOM.
 
 ### Unify logo lockup (name + tagline) everywhere
 
-**What was done:** Made the Footer and FinalCta render the same logo lockup as the Nav — mark on the left, "Heron" with the "Nothing swims past." tagline stacked below it on the right — by passing `<HeronLogo tagline />` and deleting their separate `<p>` taglines. Changed the tagline color in `HeronLogo` from hardcoded `text-steel` (#5f5f5f) to `text-current opacity-60` so it stays legible on both the light nav and the dark footer/CTA. Verified via computed styles: nav ink@60% on white, footer + CTA white@60% on dark.
+**What was done:** Made the Footer and FinalCta render the same logo lockup as the Nav - mark on the left, "Heron" with the "Nothing swims past." tagline stacked below it on the right - by passing `<HeronLogo tagline />` and deleting their separate `<p>` taglines. Changed the tagline color in `HeronLogo` from hardcoded `text-steel` (#5f5f5f) to `text-current opacity-60` so it stays legible on both the light nav and the dark footer/CTA. Verified via computed styles: nav ink@60% on white, footer + CTA white@60% on dark.
 **Files touched:**
+
 - `frontend/components/HeronLogo.tsx` (update) - tagline uses `text-current opacity-60` instead of `text-steel`, so it adapts to its container's text color
 - `frontend/components/Footer.tsx` (update) - `<HeronLogo tagline />`, removed standalone tagline `<p>`
 - `frontend/app/(marketing)/sections/FinalCta.tsx` (update) - `<HeronLogo tagline />`, removed the wrapping `flex-col` + tagline `<p>`
-**Decisions:** currentColor + opacity over a per-site color prop → one component reads correctly on any background without adding props. Nav shifts from #5f5f5f to ink@60% (≈#666) - a negligible visual change that keeps the lockup uniform.
-**Open questions / follow-ups:** none
+  **Decisions:** currentColor + opacity over a per-site color prop → one component reads correctly on any background without adding props. Nav shifts from #5f5f5f to ink@60% (≈#666) - a negligible visual change that keeps the lockup uniform.
+  **Open questions / follow-ups:** none
 
 ### Retime hero animation to 15s (inbox +1s, Heron +2s)
 
 **What was done:** Stretched the hero animation from 11s to **15s** with per-beat control (not a uniform slow-down): inbox 0→3s (+1s), reader/click 3–7s, glitch/terminal 7–9s, hacker 9–10.6s, Heron finale 10.6–15s (+2s). Every keyframe % across all 14 beat animations was piecewise-remapped to the new timeline; the short independent loops (rgb/bars/caret) left as-is. Verified `animation-duration: 15s` and the click still lands (cursor tip (143,300) inside the button box).
 **Files touched:**
+
 - `frontend/app/(marketing)/sections/HeroScene.module.css` (update) - `11s`→`15s` durations; all keyframe percentages recomputed for the new beat boundaries.
-**Decisions:** Piecewise beat retiming over a uniform `11s→15s` stretch - keeps the action beats (click, glitch, hacker) snappy and only lengthens the inbox + Heron holds, matching the request. The extra second (15 − 11 − 1 − 2) went to the reader/click beat.
-**Open questions / follow-ups:** none.
+  **Decisions:** Piecewise beat retiming over a uniform `11s→15s` stretch - keeps the action beats (click, glitch, hacker) snappy and only lengthens the inbox + Heron holds, matching the request. The extra second (15 − 11 − 1 − 2) went to the reader/click beat.
+  **Open questions / follow-ups:** none.
 
 ### Fix hero animation - cursor click alignment + robust scaling
 
 **What was done:** Fixed the cursor missing the "Log in to verify account" button and removed the "See the detection" pill. Root cause: the animation uses fixed 640px pixel keyframes, but the stage rendered at other widths (equal-column hero), so the cursor drifted off the button. Made the stage a fixed **640×520 coordinate space** that a `ResizeObserver` scales to fit its container (robust at any width), and retargeted the cursor's login-click keyframes to the button's measured center. Verified: at the click frame the cursor tip (143,299) sits inside the button box (x 31-252, y 276-320).
 **Files touched:**
+
 - `frontend/app/(marketing)/sections/HeroScene.tsx` (update) - now a client component; `.hsFrame` wrapper + `ResizeObserver` setting `--hs-scale`; removed the "See the detection" pill.
 - `frontend/app/(marketing)/sections/HeroScene.module.css` (update) - `.hsStage` fixed 640×520 + `transform: scale(var(--hs-scale))`; new `.hsFrame` (responsive box holding border/radius/shadow); cursor login-click keyframes 137,401 → 140,296.
 - `frontend/app/(marketing)/sections/Hero.tsx` (update) - grid back to `lg:grid-cols-2` (scaling handles width).
 - `context.md` (update) - this entry.
-**Decisions:** Scale-to-fit (fixed 640×520 + ResizeObserver) over pinning a 640px column - robust at all widths and keeps cursor + button in one coordinate space. The runtime scale is the one dynamic value, set as a CSS variable via the observer; all static styling stays in classes.
-**Open questions / follow-ups:** none.
+  **Decisions:** Scale-to-fit (fixed 640×520 + ResizeObserver) over pinning a 640px column - robust at all widths and keeps cursor + button in one coordinate space. The runtime scale is the one dynamic value, set as a CSS variable via the observer; all static styling stays in classes.
+  **Open questions / follow-ups:** none.
 
 ### Task 7 - Hero animation + nav tagline + design hero text
 
