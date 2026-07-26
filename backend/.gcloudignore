@@ -1,0 +1,12 @@
+# What `gcloud run deploy --source` uploads to Cloud Build.
+# Exclude dev junk, but KEEP weights/ (it gets baked into the image).
+# This file's presence also stops gcloud from falling back to .gitignore,
+# which ignores weights/ and would otherwise strip it from the upload.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+tests/
+*.md
+.DS_Store

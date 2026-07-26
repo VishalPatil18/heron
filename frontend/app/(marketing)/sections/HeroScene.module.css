@@ -1,0 +1,836 @@
+/* Ported verbatim from heron-design/HeroScene.dc.html - an 11s pure-CSS loop.
+   Scoped as a CSS module; DM Sans / JetBrains Mono resolve via next/font vars. */
+
+.hsFrame {
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 640 / 520;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow:
+    0 24px 60px -20px rgba(10, 10, 10, 0.18),
+    0 2px 6px rgba(10, 10, 10, 0.06);
+}
+
+/* Fixed 640×520 coordinate space (matches the animation's px keyframes); a
+   ResizeObserver sets --hs-scale so it scales to fit .hsFrame at any width. */
+.hsStage {
+  position: relative;
+  width: 640px;
+  height: 520px;
+  transform-origin: top left;
+  transform: scale(var(--hs-scale, 1));
+  overflow: hidden;
+  isolation: isolate;
+  background: #fff;
+}
+
+.hsMail {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.hsTitlebar {
+  height: 38px;
+  background: #f2f3f5;
+  border-bottom: 1px solid #eaecf0;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 8px;
+}
+.hsDot {
+  width: 11px;
+  height: 11px;
+  border-radius: 9999px;
+}
+.r {
+  background: #ff5f57;
+}
+.y {
+  background: #febc2e;
+}
+.g {
+  background: #28c840;
+}
+.hsTitle {
+  margin-left: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #5f5f5f;
+  letter-spacing: 0.2px;
+}
+
+.hsBody {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  animation: hsBodyOut 15s linear infinite;
+}
+@keyframes hsBodyOut {
+  0%,
+  19.8% {
+    opacity: 1;
+  }
+  22.3% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.hsSide {
+  width: 150px;
+  background: #fafbfc;
+  border-right: 1px solid #eaecf0;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hsSideH {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8e8e93;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 6px 8px 4px;
+}
+.hsSideI {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #45515e;
+}
+.hsSideI.active {
+  background: #eef1f5;
+  color: #0a0a0a;
+  font-weight: 500;
+}
+.hsSideI .c {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #a8aab2;
+}
+.hsSideI.active .c {
+  background: #0a0a0a;
+}
+
+.hsList {
+  width: 232px;
+  border-right: 1px solid #eaecf0;
+  overflow: hidden;
+}
+.hsListH {
+  padding: 12px 14px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5f5f5f;
+  border-bottom: 1px solid #eaecf0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.hsListH .cnt {
+  color: #0a0a0a;
+  background: #f2f3f5;
+  padding: 1px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+}
+.hsMailItem {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f2f3f5;
+  position: relative;
+}
+.hsMiTop {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #5f5f5f;
+  margin-bottom: 3px;
+}
+.hsMiFrom {
+  font-weight: 600;
+  color: #0a0a0a;
+  font-size: 12px;
+}
+.hsMiSubj {
+  font-size: 11.5px;
+  color: #0a0a0a;
+  font-weight: 500;
+  margin-bottom: 2px;
+  line-height: 1.35;
+}
+.hsMiPrev {
+  font-size: 10.5px;
+  color: #8e8e93;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+.hsUnread {
+  position: absolute;
+  left: 4px;
+  top: 18px;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #ff5530;
+}
+.hsItemDanger .hsMiSubj::before {
+  content: "⚠ ";
+  color: #ff5530;
+}
+.hsItemDanger {
+  animation: hsSelect 15s linear infinite;
+}
+@keyframes hsSelect {
+  0%,
+  19.8% {
+    background: #fff;
+    box-shadow: none;
+  }
+  21.8%,
+  100% {
+    background: #fff4f0;
+    box-shadow: inset 3px 0 0 #ff5530;
+  }
+}
+.hsPreview {
+  flex: 1;
+  padding: 18px 20px;
+  color: #a8aab2;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.hsReader {
+  position: absolute;
+  left: 0;
+  top: 38px;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform-origin: 38% 18%;
+  animation: hsReader 15s linear infinite;
+}
+@keyframes hsReader {
+  0%,
+  19.8% {
+    opacity: 0;
+    transform: scale(0.72) translate(-6%, -4%);
+  }
+  21.3% {
+    opacity: 1;
+    transform: scale(0.78) translate(-5%, -3.4%);
+  }
+  26.2% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+  58.8% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+  60% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+.hsRScroll {
+  flex: 1;
+  padding: 20px 28px 20px;
+  overflow: hidden;
+}
+.hsRSubj {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  margin: 0 0 10px;
+  line-height: 1.25;
+}
+.hsRSubj::before {
+  content: "⚠ ";
+  color: #ff5530;
+}
+.hsRMeta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 11.5px;
+  color: #8e8e93;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #eaecf0;
+}
+.hsRAv {
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  background: #f2f3f5;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5f5f5f;
+}
+.hsRMeta b {
+  color: #0a0a0a;
+  font-weight: 600;
+  font-size: 12.5px;
+}
+.hsRMeta .addr {
+  color: #8e8e93;
+  font-weight: 400;
+}
+.hsRBody {
+  font-size: 12.5px;
+  line-height: 1.58;
+  color: #222;
+}
+.hsRBody p {
+  margin: 0 0 10px;
+}
+.hsRBody b {
+  font-weight: 600;
+}
+.hsRNote {
+  font-size: 10.5px;
+  color: #8e8e93;
+  line-height: 1.5;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #f2f3f5;
+}
+.hsLogin {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: #ff5530;
+  color: #fff;
+  border: 0;
+  border-radius: 9999px;
+  padding: 12px 26px;
+  font-weight: 600;
+  font-size: 13.5px;
+  margin: 6px 0 4px;
+  animation: hsLogin 15s linear infinite;
+}
+.hsLogin::after {
+  content: "→";
+  font-weight: 600;
+}
+@keyframes hsLogin {
+  0%,
+  37.4% {
+    background: #ff5530;
+    box-shadow: none;
+    transform: none;
+  }
+  39.4%,
+  43.3% {
+    background: #ff5530;
+    box-shadow: 0 0 0 4px rgba(255, 85, 48, 0.28);
+    transform: none;
+  }
+  44.9% {
+    background: #c1330f;
+    box-shadow: 0 0 0 2px rgba(255, 85, 48, 0.4);
+    transform: scale(0.96);
+  }
+  46.2% {
+    background: #c1330f;
+    transform: scale(1);
+  }
+  100% {
+    background: #c1330f;
+  }
+}
+
+.hsCursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: 24px;
+  z-index: 8;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.28));
+  animation: hsCursor 15s linear infinite;
+}
+@keyframes hsCursor {
+  0% {
+    transform: translate(70px, 440px);
+  }
+  9.9% {
+    transform: translate(200px, 190px);
+  }
+  17.6% {
+    transform: translate(238px, 150px);
+  }
+  19.8% {
+    transform: translate(238px, 150px) scale(0.88);
+  }
+  21.8% {
+    transform: translate(238px, 150px) scale(1);
+  }
+  31.6% {
+    transform: translate(320px, 300px);
+  }
+  37.4% {
+    transform: translate(160px, 300px);
+  }
+  43.3% {
+    transform: translate(140px, 296px);
+  }
+  44.9% {
+    transform: translate(140px, 296px) scale(0.84);
+  }
+  46.2% {
+    transform: translate(140px, 296px) scale(1);
+    opacity: 1;
+  }
+  48.5% {
+    opacity: 1;
+  }
+  51.5% {
+    opacity: 0;
+  }
+  100% {
+    transform: translate(140px, 296px);
+    opacity: 0;
+  }
+}
+
+.hsGlitch {
+  position: absolute;
+  inset: 38px 0 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  animation: hsGlitch 15s linear infinite;
+}
+@keyframes hsGlitch {
+  0%,
+  45.2% {
+    opacity: 0;
+  }
+  46.7% {
+    opacity: 1;
+  }
+  57.3% {
+    opacity: 1;
+  }
+  58.8% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.hsScan {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0 2px,
+    rgba(0, 0, 0, 0.09) 2px 3px
+  );
+  mix-blend-mode: multiply;
+}
+.hsRgb {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(
+      120% 60% at 30% 40%,
+      rgba(255, 0, 80, 0.22),
+      transparent 60%
+    ),
+    radial-gradient(
+      120% 60% at 70% 60%,
+      rgba(0, 180, 255, 0.22),
+      transparent 60%
+    );
+  animation: hsRgb 0.18s steps(2) infinite;
+}
+@keyframes hsRgb {
+  0% {
+    transform: translate(-2px, 0);
+  }
+  50% {
+    transform: translate(2px, 1px);
+  }
+  100% {
+    transform: translate(-1px, -1px);
+  }
+}
+.hsBars {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0 10%,
+    rgba(255, 255, 255, 0.35) 10.1% 10.4%,
+    transparent 10.5% 30%,
+    rgba(0, 0, 0, 0.35) 30.1% 30.6%,
+    transparent 30.7% 66%,
+    rgba(255, 255, 255, 0.3) 66.1% 66.5%,
+    transparent 66.6% 100%
+  );
+  animation: hsBars 0.22s steps(3) infinite;
+}
+@keyframes hsBars {
+  0% {
+    transform: translateY(-3px);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+  100% {
+    transform: translateY(-2px);
+  }
+}
+
+.hsTerm {
+  position: absolute;
+  inset: 72px 46px 34px;
+  background: rgba(3, 10, 6, 0.95);
+  border: 1px solid #1ba673;
+  border-radius: 10px;
+  padding: 20px 22px;
+  z-index: 6;
+  font-family: var(--font-mono), ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #7dffb0;
+  box-shadow:
+    0 0 40px rgba(27, 166, 115, 0.4),
+    inset 0 0 60px rgba(27, 166, 115, 0.08);
+  opacity: 0;
+  animation: hsTerm 15s linear infinite;
+}
+@keyframes hsTerm {
+  0%,
+  45.2% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  46.7%,
+  58.1% {
+    opacity: 1;
+    transform: none;
+  }
+  59.5%,
+  100% {
+    opacity: 0;
+  }
+}
+.hsTerm .row {
+  opacity: 0;
+  animation: hsRow 15s linear infinite;
+}
+.hsTerm .r1 {
+  animation-delay: 0s;
+}
+.hsTerm .r2 {
+  animation-delay: 0.22s;
+}
+.hsTerm .r3 {
+  animation-delay: 0.44s;
+}
+.hsTerm .r4 {
+  animation-delay: 0.7s;
+}
+.hsTerm .r5 {
+  animation-delay: 1s;
+}
+.hsTerm .r6 {
+  animation-delay: 1.25s;
+}
+@keyframes hsRow {
+  0%,
+  46.2% {
+    opacity: 0;
+  }
+  47.4% {
+    opacity: 1;
+  }
+  58.1% {
+    opacity: 1;
+  }
+  59.5%,
+  100% {
+    opacity: 0;
+  }
+}
+.hsTerm .granted {
+  background: #1ba673;
+  color: #031008;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.hsCaret {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: #7dffb0;
+  vertical-align: -2px;
+  margin-left: 2px;
+  animation: hsCaret 1s steps(2) infinite;
+}
+@keyframes hsCaret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.hsHack {
+  position: absolute;
+  inset: 38px 0 0;
+  z-index: 9;
+  opacity: 0;
+  background: #000000;
+  overflow: hidden;
+  animation: hsHack 15s linear infinite;
+}
+@keyframes hsHack {
+  0%,
+  58.8% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.hsCode {
+  position: absolute;
+  inset: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  color: #1ba673;
+  opacity: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  padding: 14px;
+  letter-spacing: 1px;
+  animation: hsCode 15s linear infinite;
+}
+@keyframes hsCode {
+  0%,
+  58.8% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  60.3% {
+    opacity: 0.28;
+  }
+  100% {
+    opacity: 0.28;
+    transform: translateY(-46px);
+  }
+}
+.hsHackerImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: hsHacker 15s linear infinite;
+  transform-origin: 50% 60%;
+}
+@keyframes hsHacker {
+  0%,
+  58.8% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  61% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  66.1% {
+    opacity: 1;
+    transform: scale(1.03) translateX(-3px);
+  }
+  67.6% {
+    opacity: 1;
+    transform: scale(1.03) translateX(3px);
+  }
+  69.1% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hsHeron {
+  position: absolute;
+  inset: 38px 0 0;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  animation: hsHeron 15s linear infinite;
+}
+@keyframes hsHeron {
+  0%,
+  69.1% {
+    opacity: 0;
+  }
+  70.5% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.hsHeron .wipe {
+  position: absolute;
+  inset: 0;
+  background: #0a0a0a;
+  animation: hsWipe 15s linear infinite;
+}
+@keyframes hsWipe {
+  0%,
+  69.1% {
+    clip-path: polygon(-10% 0, -10% 0, -10% 100%, -10% 100%);
+  }
+  74.5% {
+    clip-path: polygon(-10% 0, 110% 0, 110% 100%, -10% 100%);
+  }
+  100% {
+    clip-path: polygon(-10% 0, 110% 0, 110% 100%, -10% 100%);
+  }
+}
+.hsHeron .msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+  gap: 22px;
+  opacity: 0;
+  animation: hsMsg 15s linear infinite;
+}
+@keyframes hsMsg {
+  0%,
+  74.5% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  78.5% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.hsHeron .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hsHeron .word {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  color: #fff;
+}
+.hsHeron h2 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  font-weight: 600;
+  max-width: 470px;
+}
+.hsHeron h2 em {
+  font-style: normal;
+  color: #ff5530;
+}
+.hsHeron .sub {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #a8aab2;
+  max-width: 400px;
+}
+.hsHeron .pill {
+  margin-top: 4px;
+  background: #fff;
+  color: #0a0a0a;
+  border-radius: 9999px;
+  padding: 11px 24px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hsStage * {
+    animation: none !important;
+  }
+  .hsReader,
+  .hsGlitch,
+  .hsTerm,
+  .hsCursor,
+  .hsBody {
+    opacity: 0;
+  }
+  .hsHackerImg {
+    opacity: 1;
+    transform: none;
+  }
+  .hsHack {
+    opacity: 1;
+  }
+  .hsCode {
+    opacity: 0.28;
+  }
+  .hsHeron {
+    opacity: 1;
+  }
+  .hsHeron .wipe {
+    clip-path: polygon(-10% 0, 110% 0, 110% 100%, -10% 100%);
+  }
+  .hsHeron .msg {
+    opacity: 1;
+    transform: none;
+  }
+}

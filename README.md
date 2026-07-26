@@ -1,10 +1,16 @@
-# Phishing Email Detection with Multimodal Deep Learning
+# Heron
 
-> **ENPM703 - Fundamentals of AI and Deep Learning | Fall 2025**
+> **"Nothing swims past."**
 
-A dual-tower fusion deep learning system that detects phishing emails by jointly analyzing **email text**, **embedded brand logos**, and **engineered metadata** - achieving **99.45% accuracy** and **AUC 0.999** on a balanced dataset of 76,346 emails.
+Heron is a multimodal phishing detector with a product face: a **FastAPI inference
+service** and a **web app** wrapped around a dual-tower fusion model that jointly
+analyzes **email text**, **embedded brand logos**, and **engineered metadata** -
+achieving **99.45% accuracy** and **AUC 0.999** on a balanced dataset of 76,346 emails.
 
-[![Live Demo](https://img.shields.io/badge/🤗%20Live%20Demo-Hugging%20Face%20Spaces-blue)](https://huggingface.co/spaces/anilawork/phish-detection-ui-final)
+AI has made phishing cheaper, faster, and more convincing. Heron is the watcher on
+the water that catches the phish before you click.
+
+[![Live Demo](https://img.shields.io/badge/🤗%20Research%20Demo-Hugging%20Face%20Spaces-blue)](https://huggingface.co/spaces/anilawork/phish-detection-ui-final)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c)](https://pytorch.org/)
 
@@ -17,9 +23,12 @@ A dual-tower fusion deep learning system that detects phishing emails by jointly
 - [Dataset](#dataset)
 - [Results](#results)
 - [Repository Structure](#repository-structure)
-- [Installation](#installation)
-- [Reproducing the Pipeline](#reproducing-the-pipeline)
-- [Running Inference](#running-inference)
+- [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Clone the repo](#clone-the-repo)
+  - [Track A - Run the Heron API (backend)](#track-a--run-the-heron-api-backend)
+  - [Track B - Reproduce the ML pipeline](#track-b--reproduce-the-ml-pipeline)
+- [Running Inference (CLI)](#running-inference-cli)
 - [Live Demo](#live-demo)
 - [Team](#team)
 
@@ -27,7 +36,7 @@ A dual-tower fusion deep learning system that detects phishing emails by jointly
 
 ## Overview
 
-Phishing attacks remain one of the most prevalent cyber threats. Traditional text-only filters fail when attackers mimic legitimate brand emails visually. This project addresses that gap with a **multimodal approach** that fuses three complementary signal types:
+Phishing attacks remain one of the most prevalent cyber threats. Traditional text-only filters fail when attackers mimic legitimate brand emails visually. Heron addresses that gap with a **multimodal approach** that fuses three complementary signal types:
 
 | Modality       | What it captures                                 | Output dim               |
 | -------------- | ------------------------------------------------ | ------------------------ |
@@ -134,9 +143,20 @@ Text length, subject length, body length, URL count, shortened-URL flag, suspici
 ## Repository Structure
 
 ```
-Phishing-Email-Detection-Multimodal-Deep-Learning/
+heron/
 │
-├── notebooks/                              # Training notebooks - run in order
+├── backend/                              # Heron API - FastAPI inference service
+│   ├── app/
+│   │   ├── main.py                       # GET /health, POST /predict
+│   │   ├── model.py                      # Fusion model + preprocessing + run_prediction
+│   │   ├── emails.py                     # Parse .html / .eml / pasted text → common shape
+│   │   └── weights.py                    # Resolve weights (local dir or HF Hub) + singleton
+│   ├── samples/                          # phishing_example.html, legit_example.html
+│   ├── tests/test_predict.py             # pytest (stubbed model - no real weights needed)
+│   ├── requirements.txt
+│   └── README.md                         # Backend run/test + weights-upload guide
+│
+├── notebooks/                            # Training notebooks - run in order
 │   ├── Final_CNN_Text_1.ipynb                    # Phase 1A: Train text CNN specialist
 │   ├── Final_CNN_Images_Custom.ipynb             # Phase 1B: Train image CNN (custom)
 │   ├── Final_CNN_Images_Resnet18.ipynb           # Phase 1B alt: ResNet18 comparison
@@ -146,7 +166,7 @@ Phishing-Email-Detection-Multimodal-Deep-Learning/
 │       ├── Final_KNN_Text.ipynb                  # KNN baseline
 │       └── text_tower_knn.ipynb                  # KNN text tower variant
 │
-├── src/                                    # Reusable Python modules
+├── src/                                  # Reusable Python modules
 │   ├── fusion_models.py          # DualTowerFusionModel, TextFeatureExtractor, ImageFeatureExtractor
 │   ├── fusion_dataset_v2.py      # PyTorch Dataset for multimodal training
 │   ├── brand_extractor.py        # Extract brand names from email text
@@ -156,7 +176,7 @@ Phishing-Email-Detection-Multimodal-Deep-Learning/
 │   └── __init__.py
 │
 ├── inference/
-│   └── preprocess_html_and_predict.py  # End-to-end inference on raw .html email files
+│   └── preprocess_html_and_predict.py  # End-to-end CLI inference on raw .html email files
 │
 ├── data/
 │   ├── vocab_text_1.json               # Text CNN vocabulary (word→index)
@@ -171,15 +191,13 @@ Phishing-Email-Detection-Multimodal-Deep-Learning/
 │   ├── best_custom_cnn_image_custom.pth# Image specialist weights (~31 MB)    [git-lfs]
 │   └── best_fusion_model.pth           # Final fusion model weights (~137 MB) [git-lfs]
 │
-├── docs/
-│   ├── Project_Report.pdf              # Full project report
-│   ├── Architecture_Report.pdf         # System architecture report
-│   ├── Presentation.pdf                # Project presentation slides
-│   ├── Contribution_Report.pdf         # Team contribution report
-│   ├── Presentation_Recording.mp4      # Presentation recording
-│   └── Demo_Recording.mp4              # Live demo recording
+├── docs/                               # Project report, architecture report, slides, recordings
 │
-├── requirements.txt
+├── plan.md                             # Heron product build plan (task-by-task)
+├── DESIGN.md                           # Heron design system (tokens, components)
+├── context.md                          # Project knowledge base (state + decisions + history)
+├── CLAUDE.md                           # Working guidelines for AI-assisted changes
+├── requirements.txt                    # ML pipeline dependencies (notebooks / training)
 ├── .gitattributes                      # git-lfs tracking rules
 ├── .gitignore
 └── README.md
@@ -189,96 +207,99 @@ Phishing-Email-Detection-Multimodal-Deep-Learning/
 
 ---
 
-## Installation
+## Quick Start
+
+Two independent tracks: run the **API** (Track A) to serve verdicts, or reproduce
+the **ML pipeline** (Track B) to retrain the model from the notebooks.
 
 ### Prerequisites
 
-- Python 3.10+
-- CUDA-capable GPU (recommended; CPU inference is supported but slower)
-- [Git LFS](https://git-lfs.com/) for model weights and large datasets
+- Python 3.10+ (the backend container targets 3.11)
+- [Git LFS](https://git-lfs.com/) - required for the model weights
+- A CUDA-capable GPU is recommended for **training**; CPU is fine for **inference / the API**
 
-### Clone and Install
+### Clone the repo
 
 ```bash
-# 1. Install Git LFS (if not already installed)
 git lfs install
+git clone https://github.com/VishalPatil18/heron.git
+cd heron
+git lfs pull        # downloads the real .pth weights + LFS datasets
+```
 
-# 2. Clone - LFS files download automatically
-git clone https://github.com/akashsv01/Phishing-Email-Detection-Multimodal-Deep-Learning.git
-cd Phishing-Email-Detection-Multimodal-Deep-Learning
+> Without `git lfs pull` the `.pth` files are small pointer stubs and the model
+> will not load locally.
 
-# 3. If LFS files did not download automatically
-git lfs pull
+### Track A - Run the Heron API (backend)
 
-# 4. Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate        # Linux / macOS
-# venv\Scripts\activate         # Windows
+The API turns an email (`.html` / `.eml` upload or pasted text) into
+`{verdict, confidence, signals, meta}` using the fusion model, loaded in-process.
 
-# 5. Install dependencies
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# Point the API at the local weights so it skips the Hugging Face download.
+# HERON_WEIGHTS_DIR must contain BOTH best_fusion_model.pth and vocab_text_1.json:
+mkdir -p .weights
+cp ../models/best_fusion_model.pth ../data/vocab_text_1.json .weights
+export HERON_WEIGHTS_DIR=.weights
+
+uvicorn app.main:app --reload                           # http://localhost:8000
+```
+
+Try it:
+
+```bash
+curl -F file=@samples/phishing_example.html localhost:8000/predict
+curl -F file=@samples/legit_example.html    localhost:8000/predict
+curl -H "Content-Type: application/json" -d '{"text":"verify your account now"}' localhost:8000/predict
+```
+
+Run the tests (stubbed model - no weights required):
+
+```bash
+pytest
+```
+
+**Endpoints:** `GET /health` → `{"status":"ok"}`; `POST /predict` accepts either
+`multipart/form-data` (field `file`, a `.html` / `.eml` / `.txt` upload) or JSON
+`{ "text": "...", "subject": "..." }`. The model loads lazily on the first
+`/predict`. If `HERON_WEIGHTS_DIR` is unset, weights are pulled from the Hugging
+Face model repo `vishalpatil-18/heron-phishing` and cached. See
+[`backend/README.md`](./backend/README.md) for the deploy + weights-upload guide.
+
+### Track B - Reproduce the ML pipeline
+
+```bash
+# from the repo root
+python -m venv venv && source venv/bin/activate         # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
----
+Then run the notebooks in order - each phase produces artifacts consumed by the next:
 
-## Reproducing the Pipeline
+1. **Phase 1A - Text specialist:** `notebooks/Final_CNN_Text_1.ipynb`
+   → `models/best_custom_cnn_text_1.pth`, `data/vocab_text_1.json` (98.96%).
+2. **Phase 1B - Image specialist:** `notebooks/Final_CNN_Images_Custom.ipynb`
+   → `models/best_custom_cnn_image_custom.pth`, `data/class_to_idx_image_custom.json` (76.30%).
+   Comparison baseline: `notebooks/Final_CNN_Images_Resnet18.ipynb` (97.43%).
+3. **Phase 2 - Multimodal integration:** `notebooks/dual_tower_text_features.ipynb`
+   → `data/unified_multimodal_text.csv`.
+4. **Phase 3 - Fusion training:** `notebooks/train_fusion3.ipynb`
+   → `models/best_fusion_model.pth` (99.45%, AUC 0.999).
 
-Run the notebooks in order. Each phase produces artifacts consumed by the next.
-
----
-
-### Phase 1 - Specialist Pre-training
-
-#### 1A. Text Specialist CNN
-
-**Notebook:** `notebooks/Final_CNN_Text_1.ipynb`
-
-- **Input:** `data/cleaned_combined_emails.csv`
-- Builds a character-level vocabulary and trains a 4-block 1D CNN on tokenized email text
-- **Outputs:** `models/best_custom_cnn_text_1.pth`, `data/vocab_text_1.json`
-- **Result:** 98.96% accuracy
-
-#### 1B. Image Specialist CNN
-
-**Notebook:** `notebooks/Final_CNN_Images_Custom.ipynb`
-
-- **Input:** OpenLogo brand logo dataset (download separately - see note below)
-- Trains a VGG-style 4-block 2D CNN on 224×224 logo images
-- **Outputs:** `models/best_custom_cnn_image_custom.pth`, `data/class_to_idx_image_custom.json`
-- **Result:** 76.30% accuracy (352-class logo classification)
-
-> **OpenLogo dataset:** Not included due to size (~2 GB). Download from [qmul-openlogo.github.io](https://qmul-openlogo.github.io/) and set the path in the notebook.
-
-**Comparison baseline:** `notebooks/Final_CNN_Images_Resnet18.ipynb` - uses ResNet18 transfer learning (97.43% accuracy on the email classification task).
+> **OpenLogo dataset** (image tower training) is not included due to size (~2 GB).
+> Download from [qmul-openlogo.github.io](https://qmul-openlogo.github.io/) and set
+> the path in the Phase 1B notebook.
 
 ---
 
-### Phase 2 - Multimodal Data Integration
+## Running Inference (CLI)
 
-**Notebook:** `notebooks/dual_tower_text_features.ipynb`
-
-- Extracts brand names from each email using `src/brand_extractor.py`
-- Maps each email to its most relevant brand logo file path via `data/brand_to_images.json`
-- Merges text features with image paths and metadata into a single aligned dataset
-- **Output:** `data/unified_multimodal_text.csv`
-
----
-
-### Phase 3 - Fusion Model Training
-
-**Notebook:** `notebooks/train_fusion3.ipynb`
-
-- Loads pre-trained text and image tower weights from Phase 1
-- **Stage 1:** Freezes both towers; trains only the fusion classifier and metadata MLP
-- **Stage 2:** Unfreezes towers; fine-tunes the full network end-to-end
-- **Output:** `models/best_fusion_model.pth`
-- **Result:** 99.45% accuracy, AUC 0.999
-
----
-
-## Running Inference
-
-Classify a raw `.html` email file using the trained fusion model:
+Classify a raw `.html` email file directly with the trained fusion model (the script
+the API is built on):
 
 ```bash
 python inference/preprocess_html_and_predict.py path/to/email.html
@@ -297,23 +318,9 @@ python inference/preprocess_html_and_predict.py path/to/email.html
 **Example output:**
 
 ```
-======================================================================
+=================================
 Analyzing: suspicious_email.html
-======================================================================
-
-Step 1: Parsing HTML...
-   Subject: Your account has been suspended - Immediate action required...
-   Body length: 2847 chars
-   Images found: 2
-
-Step 2: Processing text...
-Step 3: Processing image...
-Step 4: Extracting metadata...
-Step 5: Running fusion model...
-
-======================================================================
-ANALYSIS RESULTS
-======================================================================
+=================================
 
 Prediction: PHISHING
 Confidence: 98.73%
@@ -323,18 +330,19 @@ Detected Issues:
   High urgency language (5 urgent keywords)
   Multiple call-to-action phrases
   Excessive capitalization (34.2%)
-======================================================================
+==================================
 ```
 
 ---
 
 ## Live Demo
 
-A Streamlit application is deployed on Hugging Face Spaces - no installation required:
+A Streamlit research demo is deployed on Hugging Face Spaces - no installation required:
 
 **[https://huggingface.co/spaces/anilawork/phish-detection-ui-final](https://huggingface.co/spaces/anilawork/phish-detection-ui-final)**
 
-Upload any `.html` email file to receive an instant phishing verdict with confidence score and suspicious signal breakdown.
+Upload any `.html` email file to receive an instant phishing verdict with confidence
+score and suspicious signal breakdown.
 
 ---
 

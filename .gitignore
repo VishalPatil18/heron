@@ -4,6 +4,7 @@ Thumbs.db
 
 # Python
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *.egg-info/
 .eggs/
@@ -24,10 +25,14 @@ ENV/
 # IDE
 .vscode/
 .idea/
+.claude/
 
 # Env / secrets
-.env
-.env.*
+.env.local
 
 # Logs
 *.log
+
+# Baked-weights staging dir (source of truth stays in models/ + data/)
+backend/weights/
+backend/.weights/
